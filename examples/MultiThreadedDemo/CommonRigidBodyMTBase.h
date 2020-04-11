@@ -355,6 +355,7 @@ struct CommonRigidBodyMTBase : public CommonExampleInterface
 		}
 		return false;
 	}
+
 	virtual bool movePickedBody(const btVector3& rayFromWorld, const btVector3& rayToWorld)
 	{
 		if (m_pickedBody && m_pickedConstraint)

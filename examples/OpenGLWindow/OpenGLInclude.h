@@ -17,9 +17,11 @@ subject to the following restrictions:
 #define __OPENGL_INCLUDE_H
 
 #ifdef BT_NO_GLAD
-#include "third_party/GL/gl/include/EGL/egl.h"
-#include "third_party/GL/gl/include/EGL/eglext.h"
-#include "third_party/GL/gl/include/GL/gl.h"
+//#include "third_party/GL/gl/include/EGL/egl.h"
+//#include "third_party/GL/gl/include/EGL/eglext.h"
+//#include "third_party/GL/gl/include/GL/gl.h"
+#include <windows.h>
+//#include <GL/gl.h>
 #else
 #ifdef B3_USE_GLFW
 #include <glad/gl.h>

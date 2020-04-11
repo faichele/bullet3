@@ -4,6 +4,8 @@ cmake_policy(SET CMP0017 NEW)
 #this line has to appear before 'PROJECT' in order to be able to disable incremental linking
 SET(MSVC_INCREMENTAL_DEFAULT ON)
 
+SET(CMAKE_VERBOSE_MAKEFILE On)
+
 PROJECT(BULLET_PHYSICS)
 FILE (STRINGS "VERSION" BULLET_VERSION)
 
@@ -308,6 +310,12 @@ IF (APPLE)
 ENDIF()
 
 OPTION(BUILD_BULLET3 "Set when you want to build Bullet 3" ON)
+
+if (BUILD_BULLET3)
+	FIND_PACKAGE(OpenCL REQUIRED)
+	MESSAGE(STATUS "OpenCL include directories: ${OpenCL_INCLUDE_DIR}, libraries: ${OpenCL_LIBRARY}")
+	include_directories(${OpenCL_INCLUDE_DIR})
+ENDIF()
 
 # Optional Python configuration
 # Will not probe environment for Python configuration (which can abort the

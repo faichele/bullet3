@@ -1,6 +1,9 @@
 #ifndef GPU_RIGID_BODY_DEMO_H
 #define GPU_RIGID_BODY_DEMO_H
 
+#include <windows.h>
+#include "glad/glad.h"
+
 #include "Bullet3Common/b3Vector3.h"
 #include "../CommonOpenCL/CommonOpenCLBase.h"
 

@@ -64,7 +64,7 @@ struct CommonGraphicsApp
 		m_leftMouseButton(false),
 		m_middleMouseButton(false),
 		m_rightMouseButton(false),
-		m_wheelMultiplier(0.01f),
+		m_wheelMultiplier(/*0.01f*/ 1.0f), // TODO: Find proper call location for setter!
 		m_mouseMoveMultiplier(0.4f),
 		m_mouseXpos(0.f),
 		m_mouseYpos(0.f),

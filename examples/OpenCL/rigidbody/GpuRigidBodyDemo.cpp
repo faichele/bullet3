@@ -105,6 +105,7 @@ static void PairKeyboardCallback(int key, int state)
 
 void GpuRigidBodyDemo::setupScene()
 {
+
 }
 
 void GpuRigidBodyDemo::initPhysics()
