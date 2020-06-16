@@ -75,146 +75,151 @@ public:
 
 	virtual void debugDrawWorld();
 
-	void setSolverCallback(btSolverCallback cb)
-	{
-		m_solverCallback = cb;
-	}
-
-	virtual ~btDeformableMultiBodyDynamicsWorld();
-
-	virtual btMultiBodyDynamicsWorld* getMultiBodyDynamicsWorld()
-	{
-		return (btMultiBodyDynamicsWorld*)(this);
-	}
-
-	virtual const btMultiBodyDynamicsWorld* getMultiBodyDynamicsWorld() const
-	{
-		return (const btMultiBodyDynamicsWorld*)(this);
-	}
-
-	virtual btDynamicsWorldType getWorldType() const
-	{
-		return BT_DEFORMABLE_MULTIBODY_DYNAMICS_WORLD;
-	}
-
-	virtual void predictUnconstraintMotion(btScalar timeStep);
-
-	virtual void addSoftBody(btSoftBody* body, int collisionFilterGroup = btBroadphaseProxy::DefaultFilter, int collisionFilterMask = btBroadphaseProxy::AllFilter);
-
-	btSoftBodyArray& getSoftBodyArray()
-	{
-		return m_softBodies;
-	}
-
-	const btSoftBodyArray& getSoftBodyArray() const
-	{
-		return m_softBodies;
-	}
-
-	btSoftBodyWorldInfo& getWorldInfo()
-	{
-		return m_sbi;
-	}
-
-	const btSoftBodyWorldInfo& getWorldInfo() const
-	{
-		return m_sbi;
-	}
-
-	void reinitialize(btScalar timeStep);
-
-	void applyRigidBodyGravity(btScalar timeStep);
-
-	void beforeSolverCallbacks(btScalar timeStep);
-
-	void afterSolverCallbacks(btScalar timeStep);
-
-	void addForce(btSoftBody* psb, btDeformableLagrangianForce* force);
-
-	void removeForce(btSoftBody* psb, btDeformableLagrangianForce* force);
-
-	void removeSoftBody(btSoftBody* body);
-
-	void removeCollisionObject(btCollisionObject* collisionObject);
-
-	int getDrawFlags() const { return (m_drawFlags); }
-	void setDrawFlags(int f) { m_drawFlags = f; }
-
-	void setupConstraints();
-
-	void performDeformableCollisionDetection();
-
-	void solveMultiBodyConstraints();
-
-	void solveContactConstraints();
-
-	void sortConstraints();
-
-	void softBodySelfCollision();
-
-	void setImplicit(bool implicit)
-	{
-		m_implicit = implicit;
-	}
-
-	void setLineSearch(bool lineSearch)
-	{
-		m_lineSearch = lineSearch;
-	}
-
-	void applyRepulsionForce(btScalar timeStep);
-
-	void performGeometricCollisions(btScalar timeStep);
-
-	struct btDeformableSingleRayCallback : public btBroadphaseRayCallback
-	{
-		btVector3 m_rayFromWorld;
-		btVector3 m_rayToWorld;
-		btTransform m_rayFromTrans;
-		btTransform m_rayToTrans;
-		btVector3 m_hitNormal;
-
-		const btDeformableMultiBodyDynamicsWorld* m_world;
-		btCollisionWorld::RayResultCallback& m_resultCallback;
-
-		btDeformableSingleRayCallback(const btVector3& rayFromWorld, const btVector3& rayToWorld, const btDeformableMultiBodyDynamicsWorld* world, btCollisionWorld::RayResultCallback& resultCallback)
-			: m_rayFromWorld(rayFromWorld),
-			  m_rayToWorld(rayToWorld),
-			  m_world(world),
-			  m_resultCallback(resultCallback)
-		{
-			m_rayFromTrans.setIdentity();
-			m_rayFromTrans.setOrigin(m_rayFromWorld);
-			m_rayToTrans.setIdentity();
-			m_rayToTrans.setOrigin(m_rayToWorld);
-
-			btVector3 rayDir = (rayToWorld - rayFromWorld);
-
-			rayDir.normalize();
-			///what about division by zero? --> just set rayDirection[i] to INF/1e30
-			m_rayDirectionInverse[0] = rayDir[0] == btScalar(0.0) ? btScalar(1e30) : btScalar(1.0) / rayDir[0];
-			m_rayDirectionInverse[1] = rayDir[1] == btScalar(0.0) ? btScalar(1e30) : btScalar(1.0) / rayDir[1];
-			m_rayDirectionInverse[2] = rayDir[2] == btScalar(0.0) ? btScalar(1e30) : btScalar(1.0) / rayDir[2];
-			m_signs[0] = m_rayDirectionInverse[0] < 0.0;
-			m_signs[1] = m_rayDirectionInverse[1] < 0.0;
-			m_signs[2] = m_rayDirectionInverse[2] < 0.0;
-
-			m_lambda_max = rayDir.dot(m_rayToWorld - m_rayFromWorld);
-		}
-
-		virtual bool process(const btBroadphaseProxy* proxy)
-		{
-			///terminate further ray tests, once the closestHitFraction reached zero
-			if (m_resultCallback.m_closestHitFraction == btScalar(0.f))
-				return false;
-
-			btCollisionObject* collisionObject = (btCollisionObject*)proxy->m_clientObject;
-
-			//only perform raycast if filterMask matches
-			if (m_resultCallback.needsCollision(collisionObject->getBroadphaseHandle()))
-			{
-				//RigidcollisionObject* collisionObject = ctrl->GetRigidcollisionObject();
-				//btVector3 collisionObjectAabbMin,collisionObjectAabbMax;
+    void setSolverCallback(btSolverCallback cb)
+    {
+        m_solverCallback = cb;
+    }
+    
+    virtual ~btDeformableMultiBodyDynamicsWorld();
+    
+    virtual btMultiBodyDynamicsWorld* getMultiBodyDynamicsWorld()
+    {
+        return (btMultiBodyDynamicsWorld*)(this);
+    }
+    
+    virtual const btMultiBodyDynamicsWorld* getMultiBodyDynamicsWorld() const
+    {
+        return (const btMultiBodyDynamicsWorld*)(this);
+    }
+    
+    virtual btDynamicsWorldType getWorldType() const
+    {
+        return BT_DEFORMABLE_MULTIBODY_DYNAMICS_WORLD;
+    }
+    
+    virtual void predictUnconstraintMotion(btScalar timeStep);
+    
+    virtual void addSoftBody(btSoftBody* body, int collisionFilterGroup = btBroadphaseProxy::DefaultFilter, int collisionFilterMask = btBroadphaseProxy::AllFilter);
+    
+    btSoftBodyArray& getSoftBodyArray()
+    {
+        return m_softBodies;
+    }
+    
+    const btSoftBodyArray& getSoftBodyArray() const
+    {
+        return m_softBodies;
+    }
+    
+    btSoftBodyWorldInfo& getWorldInfo()
+    {
+        return m_sbi;
+    }
+    
+    const btSoftBodyWorldInfo& getWorldInfo() const
+    {
+        return m_sbi;
+    }
+    
+    void reinitialize(btScalar timeStep);
+    
+    void applyRigidBodyGravity(btScalar timeStep);
+    
+    void beforeSolverCallbacks(btScalar timeStep);
+    
+    void afterSolverCallbacks(btScalar timeStep);
+    
+    void addForce(btSoftBody* psb, btDeformableLagrangianForce* force);
+    
+    void removeForce(btSoftBody* psb, btDeformableLagrangianForce* force);
+    
+    void removeSoftBody(btSoftBody* body);
+    
+    void removeCollisionObject(btCollisionObject* collisionObject);
+    
+    int getDrawFlags() const { return (m_drawFlags); }
+    void setDrawFlags(int f) { m_drawFlags = f; }
+    
+    void setupConstraints();
+    
+    void performDeformableCollisionDetection();
+    
+    void solveMultiBodyConstraints();
+    
+    void solveContactConstraints();
+    
+    void sortConstraints();
+    
+    void softBodySelfCollision();
+    
+    void setImplicit(bool implicit)
+    {
+        m_implicit = implicit;
+    }
+    
+    void setLineSearch(bool lineSearch)
+    {
+        m_lineSearch = lineSearch;
+    }
+    
+    void setUseProjection(bool useProjection)
+    {
+        m_useProjection = useProjection;
+    }
+    
+    void applyRepulsionForce(btScalar timeStep);
+    
+    void performGeometricCollisions(btScalar timeStep);
+    
+    struct btDeformableSingleRayCallback : public btBroadphaseRayCallback
+    {
+        btVector3 m_rayFromWorld;
+        btVector3 m_rayToWorld;
+        btTransform m_rayFromTrans;
+        btTransform m_rayToTrans;
+        btVector3 m_hitNormal;
+        
+        const btDeformableMultiBodyDynamicsWorld* m_world;
+        btCollisionWorld::RayResultCallback& m_resultCallback;
+        
+        btDeformableSingleRayCallback(const btVector3& rayFromWorld, const btVector3& rayToWorld, const btDeformableMultiBodyDynamicsWorld* world, btCollisionWorld::RayResultCallback& resultCallback)
+        : m_rayFromWorld(rayFromWorld),
+        m_rayToWorld(rayToWorld),
+        m_world(world),
+        m_resultCallback(resultCallback)
+        {
+            m_rayFromTrans.setIdentity();
+            m_rayFromTrans.setOrigin(m_rayFromWorld);
+            m_rayToTrans.setIdentity();
+            m_rayToTrans.setOrigin(m_rayToWorld);
+            
+            btVector3 rayDir = (rayToWorld - rayFromWorld);
+            
+            rayDir.normalize();
+            ///what about division by zero? --> just set rayDirection[i] to INF/1e30
+            m_rayDirectionInverse[0] = rayDir[0] == btScalar(0.0) ? btScalar(1e30) : btScalar(1.0) / rayDir[0];
+            m_rayDirectionInverse[1] = rayDir[1] == btScalar(0.0) ? btScalar(1e30) : btScalar(1.0) / rayDir[1];
+            m_rayDirectionInverse[2] = rayDir[2] == btScalar(0.0) ? btScalar(1e30) : btScalar(1.0) / rayDir[2];
+            m_signs[0] = m_rayDirectionInverse[0] < 0.0;
+            m_signs[1] = m_rayDirectionInverse[1] < 0.0;
+            m_signs[2] = m_rayDirectionInverse[2] < 0.0;
+            
+            m_lambda_max = rayDir.dot(m_rayToWorld - m_rayFromWorld);
+        }
+        
+        virtual bool process(const btBroadphaseProxy* proxy)
+        {
+            ///terminate further ray tests, once the closestHitFraction reached zero
+            if (m_resultCallback.m_closestHitFraction == btScalar(0.f))
+                return false;
+            
+            btCollisionObject* collisionObject = (btCollisionObject*)proxy->m_clientObject;
+            
+            //only perform raycast if filterMask matches
+            if (m_resultCallback.needsCollision(collisionObject->getBroadphaseHandle()))
+            {
+                //RigidcollisionObject* collisionObject = ctrl->GetRigidcollisionObject();
+                //btVector3 collisionObjectAabbMin,collisionObjectAabbMax;
 #if 0
 #ifdef RECALCULATE_AABB
                 btVector3 collisionObjectAabbMin,collisionObjectAabbMax;

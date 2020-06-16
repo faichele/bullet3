@@ -156,40 +156,39 @@ void btDeformableContactProjection::setConstraints(const btContactSolverInfo& in
 void btDeformableContactProjection::project(TVStack& x)
 {
 #ifndef USE_MGS
-	const int dim = 3;
-	for (int index = 0; index < m_projectionsDict.size(); ++index)
-	{
-		btAlignedObjectArray<btVector3>& projectionDirs = *m_projectionsDict.getAtIndex(index);
-		size_t i = m_projectionsDict.getKeyAtIndex(index).getUid1();
-		if (projectionDirs.size() >= dim)
-		{
-			// static node
-			x[i].setZero();
-			continue;
-		}
-		else if (projectionDirs.size() == 2)
-		{
-			btVector3 dir0 = projectionDirs[0];
-			btVector3 dir1 = projectionDirs[1];
-			btVector3 free_dir = btCross(dir0, dir1);
-			if (free_dir.safeNorm() < SIMD_EPSILON)
-			{
-				x[i] -= x[i].dot(dir0) * dir0;
-				x[i] -= x[i].dot(dir1) * dir1;
-			}
-			else
-			{
-				free_dir.normalize();
-				x[i] = x[i].dot(free_dir) * free_dir;
-			}
-		}
-		else
-		{
-			btAssert(projectionDirs.size() == 1);
-			btVector3 dir0 = projectionDirs[0];
-			x[i] -= x[i].dot(dir0) * dir0;
-		}
-	}
+    const int dim = 3;
+    for (int index = 0; index < m_projectionsDict.size(); ++index)
+    {
+        btAlignedObjectArray<btVector3>& projectionDirs = *m_projectionsDict.getAtIndex(index);
+        size_t i = m_projectionsDict.getKeyAtIndex(index).getUid1();
+        if (projectionDirs.size() >= dim)
+        {
+            // static node
+            x[i].setZero();
+            continue;
+        }
+        else if (projectionDirs.size() == 2)
+        {
+            btVector3 dir0 = projectionDirs[0];
+            btVector3 dir1 = projectionDirs[1];
+            btVector3 free_dir = btCross(dir0, dir1);
+            if (free_dir.safeNorm() < SIMD_EPSILON)
+            {
+                x[i] -= x[i].dot(dir0) * dir0;
+            }
+            else
+            {
+                free_dir.normalize();
+                x[i] = x[i].dot(free_dir) * free_dir;
+            }
+        }
+        else
+        {
+            btAssert(projectionDirs.size() == 1);
+            btVector3 dir0 = projectionDirs[0];
+            x[i] -= x[i].dot(dir0) * dir0;
+        }
+    }
 #else
 	btReducedVector p(x.size());
 	for (int i = 0; i < m_projections.size(); ++i)
@@ -296,42 +295,42 @@ void btDeformableContactProjection::setProjection()
 					face->m_n[k]->m_constrained = true;
 				}
 			}
-			for (int k = 0; k < 3; ++k)
-			{
-				btSoftBody::Node* node = face->m_n[k];
-				int index = node->index;
-				if (m_faceRigidConstraints[i][j].m_static)
-				{
-					if (m_projectionsDict.find(index) == NULL)
-					{
-						m_projectionsDict.insert(index, units);
-					}
-					else
-					{
-						btAlignedObjectArray<btVector3>& projections = *m_projectionsDict[index];
-						for (int k = 0; k < 3; ++k)
-						{
-							projections.push_back(units[k]);
-						}
-					}
-				}
-				else
-				{
-					if (m_projectionsDict.find(index) == NULL)
-					{
-						btAlignedObjectArray<btVector3> projections;
-						projections.push_back(m_faceRigidConstraints[i][j].m_normal);
-						m_projectionsDict.insert(index, projections);
-					}
-					else
-					{
-						btAlignedObjectArray<btVector3>& projections = *m_projectionsDict[index];
-						projections.push_back(m_faceRigidConstraints[i][j].m_normal);
-					}
-				}
-			}
-		}
-	}
+            for (int k = 0; k < 3; ++k)
+            {
+                btSoftBody::Node* node = face->m_n[k];
+                int index = node->index;
+                if (m_faceRigidConstraints[i][j].m_static)
+                {
+                    if (m_projectionsDict.find(index) == NULL)
+                    {
+                        m_projectionsDict.insert(index, units);
+                    }
+                    else
+                    {
+                        btAlignedObjectArray<btVector3>& projections = *m_projectionsDict[index];
+                        for (int l = 0; l < 3; ++l)
+                        {
+                            projections.push_back(units[l]);
+                        }
+                    }
+                }
+                else
+                {
+                    if (m_projectionsDict.find(index) == NULL)
+                    {
+                        btAlignedObjectArray<btVector3> projections;
+                        projections.push_back(m_faceRigidConstraints[i][j].m_normal);
+                        m_projectionsDict.insert(index, projections);
+                    }
+                    else
+                    {
+                        btAlignedObjectArray<btVector3>& projections = *m_projectionsDict[index];
+                        projections.push_back(m_faceRigidConstraints[i][j].m_normal);
+                    }
+                }
+            }
+        }
+    }
 #else
 	int dof = 0;
 	for (int i = 0; i < m_softBodies.size(); ++i)

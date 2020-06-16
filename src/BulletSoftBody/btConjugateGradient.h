@@ -24,88 +24,90 @@ class btConjugateGradient : public btKrylovSolver<MatrixX>
 	TVStack r, p, z, temp;
 
 public:
-	btConjugateGradient(const int max_it_in)
-		: btKrylovSolver<MatrixX>(max_it_in, SIMD_EPSILON)
-	{
-	}
+    btConjugateGradient(const int max_it_in)
+    : btKrylovSolver<MatrixX>(max_it_in, SIMD_EPSILON)
+    {
+    }
+    
+    virtual ~btConjugateGradient(){}
+    
+    // return the number of iterations taken
+    int solve(MatrixX& A, TVStack& x, const TVStack& b, bool verbose = false)
+    {
+        BT_PROFILE("CGSolve");
+        btAssert(x.size() == b.size());
+        reinitialize(b);
+        temp = b;
+        A.project(temp);
+        p = temp;
+        A.precondition(p,z);
+        btScalar d0 = this->dot(z,temp);
+        // r = b - A * x --with assigned dof zeroed out
+        A.multiply(x, temp);
+        r = this->sub(b, temp);
+        A.project(r);
+        // z = M^(-1) * r
+        A.precondition(r, z);
+        A.project(z);
+        btScalar r_dot_z = this->dot(z,r);
+        if (r_dot_z <= Base::m_tolerance*d0) {
+            if (verbose)
+            {
+                std::cout << "Iteration = 0" << std::endl;
+                std::cout << "Two norm of the residual = " << r_dot_z << std::endl;
+            }
+            return 0;
+        }
+        p = z;
+        btScalar r_dot_z_new = r_dot_z;
+        for (int k = 1; k <= Base::m_maxIterations; k++) {
+            // temp = A*p
+            A.multiply(p, temp);
+            A.project(temp);
+            if (this->dot(p,temp) < 0)
+            {
+                if (verbose)
+                    std::cout << "Encountered negative direction in CG!" << std::endl;
+                if (k == 1)
+                {
+                    x = b;
+                }
+              return k;
+            }
+            // alpha = r^T * z / (p^T * A * p)
+            btScalar alpha = r_dot_z_new / this->dot(p, temp);
+            //  x += alpha * p;
+            this->multAndAddTo(alpha, p, x);
+            //  r -= alpha * temp;
+            this->multAndAddTo(-alpha, temp, r);
+            // z = M^(-1) * r
+            A.precondition(r, z);
+            r_dot_z = r_dot_z_new;
+            r_dot_z_new = this->dot(r,z);
+            if (r_dot_z_new < Base::m_tolerance * d0) {
+                if (verbose)
+                {
+                    std::cout << "ConjugateGradient iterations " << k << std::endl;
+                }
+                return k;
+            }
 
-	virtual ~btConjugateGradient() {}
-
-	// return the number of iterations taken
-	int solve(MatrixX& A, TVStack& x, const TVStack& b, bool verbose = false)
-	{
-		BT_PROFILE("CGSolve");
-		btAssert(x.size() == b.size());
-		reinitialize(b);
-		// r = b - A * x --with assigned dof zeroed out
-		A.multiply(x, temp);
-		r = this->sub(b, temp);
-		A.project(r);
-		// z = M^(-1) * r
-		A.precondition(r, z);
-		A.project(z);
-		btScalar r_dot_z = this->dot(z, r);
-		if (r_dot_z <= Base::m_tolerance)
-		{
-			if (verbose)
-			{
-				std::cout << "Iteration = 0" << std::endl;
-				std::cout << "Two norm of the residual = " << r_dot_z << std::endl;
-			}
-			return 0;
-		}
-		p = z;
-		btScalar r_dot_z_new = r_dot_z;
-		for (int k = 1; k <= Base::m_maxIterations; k++)
-		{
-			// temp = A*p
-			A.multiply(p, temp);
-			A.project(temp);
-			if (this->dot(p, temp) < SIMD_EPSILON)
-			{
-				if (verbose)
-					std::cout << "Encountered negative direction in CG!" << std::endl;
-				if (k == 1)
-				{
-					x = b;
-				}
-				return k;
-			}
-			// alpha = r^T * z / (p^T * A * p)
-			btScalar alpha = r_dot_z_new / this->dot(p, temp);
-			//  x += alpha * p;
-			this->multAndAddTo(alpha, p, x);
-			//  r -= alpha * temp;
-			this->multAndAddTo(-alpha, temp, r);
-			// z = M^(-1) * r
-			A.precondition(r, z);
-			r_dot_z = r_dot_z_new;
-			r_dot_z_new = this->dot(r, z);
-			if (r_dot_z_new < Base::m_tolerance)
-			{
-				if (verbose)
-				{
-					std::cout << "ConjugateGradient iterations " << k << std::endl;
-				}
-				return k;
-			}
-
-			btScalar beta = r_dot_z_new / r_dot_z;
-			p = this->multAndAdd(beta, p, z);
-		}
-		if (verbose)
-		{
-			std::cout << "ConjugateGradient max iterations reached " << Base::m_maxIterations << std::endl;
-		}
-		return Base::m_maxIterations;
-	}
-
-	void reinitialize(const TVStack& b)
-	{
-		r.resize(b.size());
-		p.resize(b.size());
-		z.resize(b.size());
-		temp.resize(b.size());
-	}
+            btScalar beta = r_dot_z_new/r_dot_z;
+            p = this->multAndAdd(beta, p, z);
+        }
+        if (verbose)
+        {
+            std::cout << "ConjugateGradient max iterations reached " << Base::m_maxIterations << " error = " << r_dot_z_new << std::endl;
+        }
+        return Base::m_maxIterations;
+    }
+    
+    void reinitialize(const TVStack& b)
+    {
+        r.resize(b.size());
+        p.resize(b.size());
+        z.resize(b.size());
+        temp.resize(b.size());
+    }
 };
 #endif /* btConjugateGradient_h */
