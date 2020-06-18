@@ -331,35 +331,6 @@ void btDeformableBodySolver::backupVelocity()
 
 void btDeformableBodySolver::setupDeformableSolve(bool implicit)
 {
-<<<<<<< HEAD
-	int counter = 0;
-	for (int i = 0; i < m_softBodies.size(); ++i)
-	{
-		btSoftBody* psb = m_softBodies[i];
-		if (!psb->isActive())
-		{
-			counter += psb->m_nodes.size();
-			continue;
-		}
-		for (int j = 0; j < psb->m_nodes.size(); ++j)
-		{
-			if (implicit)
-			{
-				if ((psb->m_nodes[j].m_v - m_backupVelocity[counter]).norm() < SIMD_EPSILON)
-					m_dv[counter] = psb->m_nodes[j].m_v - m_backupVelocity[counter];
-				else
-					m_dv[counter] = psb->m_nodes[j].m_v - psb->m_nodes[j].m_vn;
-				m_backupVelocity[counter] = psb->m_nodes[j].m_vn;
-			}
-			else
-			{
-				m_dv[counter] = psb->m_nodes[j].m_v + psb->m_nodes[j].m_splitv - m_backupVelocity[counter];
-			}
-			psb->m_nodes[j].m_v = m_backupVelocity[counter];
-			++counter;
-		}
-	}
-=======
     int counter = 0;
     for (int i = 0; i < m_softBodies.size(); ++i)
     {
@@ -388,7 +359,6 @@ void btDeformableBodySolver::setupDeformableSolve(bool implicit)
             ++counter;
         }
     }
->>>>>>> add corotated linear elasticity
 }
 
 void btDeformableBodySolver::revertVelocity()
@@ -435,8 +405,55 @@ void btDeformableBodySolver::predictMotion(btScalar solverdt)
 
 void btDeformableBodySolver::predictDeformableMotion(btSoftBody* psb, btScalar dt)
 {
-	BT_PROFILE("btDeformableBodySolver::predictDeformableMotion");
-	int i, ni;
+    BT_PROFILE("btDeformableBodySolver::predictDeformableMotion");
+    int i, ni;
+    
+    /* Update                */
+    if (psb->m_bUpdateRtCst)
+    {
+        psb->m_bUpdateRtCst = false;
+        psb->updateConstants();
+        psb->m_fdbvt.clear();
+        if (psb->m_cfg.collisions & btSoftBody::fCollision::SDF_RD)
+        {
+            psb->initializeFaceTree();
+        }
+    }
+    
+    /* Prepare                */
+    psb->m_sst.sdt = dt * psb->m_cfg.timescale;
+    psb->m_sst.isdt = 1 / psb->m_sst.sdt;
+    psb->m_sst.velmrg = psb->m_sst.sdt * 3;
+    psb->m_sst.radmrg = psb->getCollisionShape()->getMargin();
+    psb->m_sst.updmrg = psb->m_sst.radmrg * (btScalar)0.25;
+    /* Bounds                */
+    psb->updateBounds();
+    
+    /* Integrate            */
+    // do not allow particles to move more than the bounding box size
+    btScalar max_v = (psb->m_bounds[1]-psb->m_bounds[0]).norm() / dt;
+    for (i = 0, ni = psb->m_nodes.size(); i < ni; ++i)
+    {
+        btSoftBody::Node& n = psb->m_nodes[i];
+        // apply drag
+        n.m_v *= (1 - psb->m_cfg.drag);
+        // scale velocity back
+		if (m_implicit)
+		{
+			n.m_q = n.m_x;
+		}
+		else
+		{
+			if (n.m_v.norm() > max_v)
+			{
+				n.m_v.safeNormalize();
+				n.m_v *= max_v;
+			}
+			n.m_q = n.m_x + n.m_v * dt;
+		}
+        n.m_splitv.setZero();
+        n.m_constrained = false;
+    }
 
 	/* Update                */
 	if (psb->m_bUpdateRtCst)
