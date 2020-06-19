@@ -900,6 +900,7 @@ void btSoftBody::setVelocity(const btVector3& velocity)
 		if (n.m_im > 0)
 		{
 			n.m_v = velocity;
+            n.m_vn = velocity;
 		}
 	}
 }
@@ -2772,6 +2773,7 @@ bool btSoftBody::checkDeformableContact(const btCollisionObjectWrapper* colObjWr
 			shp,
 			nrm,
 			margin);
+
 	if (!predict)
 	{
 		cti.m_colObj = colObjWrap->getCollisionObject();

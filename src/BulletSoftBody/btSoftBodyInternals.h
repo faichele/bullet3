@@ -1011,6 +1011,16 @@ static inline btMatrix3x3 ImpulseMatrix(btScalar dt,
 }
 
 //
+static inline btMatrix3x3 ImpulseMatrix(btScalar dt,
+                                        const btMatrix3x3& effective_mass,
+                                        btScalar imb,
+                                        const btMatrix3x3& iwi,
+                                        const btVector3& r)
+{
+    return (Diagonal(1 / dt) * Add(effective_mass, MassMatrix(imb, iwi, r)).inverse());
+}
+
+//
 static inline btMatrix3x3 ImpulseMatrix(btScalar ima, const btMatrix3x3& iia, const btVector3& ra,
 										btScalar imb, const btMatrix3x3& iib, const btVector3& rb)
 {
@@ -1659,69 +1669,71 @@ struct btSoftColliders
 			{
 				// check for collision at x_{n+1}^*
 				if (psb->checkDeformableContact(m_colObj1Wrap, n.m_q, m, c.m_cti, /*predict = */ true))
-				{
-					const btScalar ima = n.m_im;
-					// todo: collision between multibody and fixed deformable node will be missed.
-					const btScalar imb = m_rigidBody ? m_rigidBody->getInvMass() : 0.f;
-					const btScalar ms = ima + imb;
-					if (ms > 0)
-					{
-						// resolve contact at x_n
-						psb->checkDeformableContact(m_colObj1Wrap, n.m_x, m, c.m_cti, /*predict = */ false);
-						btSoftBody::sCti& cti = c.m_cti;
-						c.m_node = &n;
-						const btScalar fc = psb->m_cfg.kDF * m_colObj1Wrap->getCollisionObject()->getFriction();
-						c.m_c2 = ima;
-						c.m_c3 = fc;
-						c.m_c4 = m_colObj1Wrap->getCollisionObject()->isStaticOrKinematicObject() ? psb->m_cfg.kKHR : psb->m_cfg.kCHR;
-
-						if (cti.m_colObj->getInternalType() == btCollisionObject::CO_RIGID_BODY)
-						{
-							const btTransform& wtr = m_rigidBody ? m_rigidBody->getWorldTransform() : m_colObj1Wrap->getCollisionObject()->getWorldTransform();
-							static const btMatrix3x3 iwiStatic(0, 0, 0, 0, 0, 0, 0, 0, 0);
-							const btMatrix3x3& iwi = m_rigidBody ? m_rigidBody->getInvInertiaTensorWorld() : iwiStatic;
-							const btVector3 ra = n.m_x - wtr.getOrigin();
-
-							c.m_c0 = ImpulseMatrix(1, ima, imb, iwi, ra);
-							c.m_c1 = ra;
-						}
-						else if (cti.m_colObj->getInternalType() == btCollisionObject::CO_FEATHERSTONE_LINK)
-						{
-							btMultiBodyLinkCollider* multibodyLinkCol = (btMultiBodyLinkCollider*)btMultiBodyLinkCollider::upcast(cti.m_colObj);
-							if (multibodyLinkCol)
-							{
-								btVector3 normal = cti.m_normal;
-								btVector3 t1 = generateUnitOrthogonalVector(normal);
-								btVector3 t2 = btCross(normal, t1);
-								btMultiBodyJacobianData jacobianData_normal, jacobianData_t1, jacobianData_t2;
-								findJacobian(multibodyLinkCol, jacobianData_normal, c.m_node->m_x, normal);
-								findJacobian(multibodyLinkCol, jacobianData_t1, c.m_node->m_x, t1);
-								findJacobian(multibodyLinkCol, jacobianData_t2, c.m_node->m_x, t2);
-
-								btScalar* J_n = &jacobianData_normal.m_jacobians[0];
-								btScalar* J_t1 = &jacobianData_t1.m_jacobians[0];
-								btScalar* J_t2 = &jacobianData_t2.m_jacobians[0];
-
-								btScalar* u_n = &jacobianData_normal.m_deltaVelocitiesUnitImpulse[0];
-								btScalar* u_t1 = &jacobianData_t1.m_deltaVelocitiesUnitImpulse[0];
-								btScalar* u_t2 = &jacobianData_t2.m_deltaVelocitiesUnitImpulse[0];
-
-								btMatrix3x3 rot(normal.getX(), normal.getY(), normal.getZ(),
-												t1.getX(), t1.getY(), t1.getZ(),
-												t2.getX(), t2.getY(), t2.getZ());  // world frame to local frame
-								const int ndof = multibodyLinkCol->m_multiBody->getNumDofs() + 6;
-								btMatrix3x3 local_impulse_matrix = (Diagonal(n.m_im) + OuterProduct(J_n, J_t1, J_t2, u_n, u_t1, u_t2, ndof)).inverse();
-								c.m_c0 = rot.transpose() * local_impulse_matrix * rot;
-								c.jacobianData_normal = jacobianData_normal;
-								c.jacobianData_t1 = jacobianData_t1;
-								c.jacobianData_t2 = jacobianData_t2;
-								c.t1 = t1;
-								c.t2 = t2;
-							}
-						}
-						psb->m_nodeRigidContacts.push_back(c);
-					}
-				}
+                {
+                    const btScalar ima = n.m_im;
+                    // todo: collision between multibody and fixed deformable node will be missed.
+                    const btScalar imb = m_rigidBody ? m_rigidBody->getInvMass() : 0.f;
+                    const btScalar ms = ima + imb;
+                    if (ms > 0)
+                    {
+                        // resolve contact at x_n
+                        psb->checkDeformableContact(m_colObj1Wrap, n.m_x, m, c.m_cti, /*predict = */ false);
+                        btSoftBody::sCti& cti = c.m_cti;
+                        c.m_node = &n;
+                        const btScalar fc = psb->m_cfg.kDF * m_colObj1Wrap->getCollisionObject()->getFriction();
+                        c.m_c2 = ima;
+                        c.m_c3 = fc;
+                        c.m_c4 = m_colObj1Wrap->getCollisionObject()->isStaticOrKinematicObject() ? psb->m_cfg.kKHR : psb->m_cfg.kCHR;
+                        
+                        if (cti.m_colObj->getInternalType() == btCollisionObject::CO_RIGID_BODY)
+                        {
+                            const btTransform& wtr = m_rigidBody ? m_rigidBody->getWorldTransform() : m_colObj1Wrap->getCollisionObject()->getWorldTransform();
+                            static const btMatrix3x3 iwiStatic(0, 0, 0, 0, 0, 0, 0, 0, 0);
+                            const btMatrix3x3& iwi = m_rigidBody ? m_rigidBody->getInvInertiaTensorWorld() : iwiStatic;
+                            const btVector3 ra = n.m_x - wtr.getOrigin();
+                            
+                            c.m_c0 = ImpulseMatrix(1, n.m_effectiveMass_inv, imb, iwi, ra);
+                            c.m_c5 = n.m_effectiveMass_inv;
+//                            c.m_c0 = ImpulseMatrix(1, ima, imb, iwi, ra);
+                            c.m_c1 = ra;
+                        }
+                        else if (cti.m_colObj->getInternalType() == btCollisionObject::CO_FEATHERSTONE_LINK)
+                        {
+                            btMultiBodyLinkCollider* multibodyLinkCol = (btMultiBodyLinkCollider*)btMultiBodyLinkCollider::upcast(cti.m_colObj);
+                            if (multibodyLinkCol)
+                            {
+                                btVector3 normal = cti.m_normal;
+                                btVector3 t1 = generateUnitOrthogonalVector(normal);
+                                btVector3 t2 = btCross(normal, t1);
+                                btMultiBodyJacobianData jacobianData_normal, jacobianData_t1, jacobianData_t2;
+                                findJacobian(multibodyLinkCol, jacobianData_normal, c.m_node->m_x, normal);
+                                findJacobian(multibodyLinkCol, jacobianData_t1, c.m_node->m_x, t1);
+                                findJacobian(multibodyLinkCol, jacobianData_t2, c.m_node->m_x, t2);
+                                
+                                btScalar* J_n = &jacobianData_normal.m_jacobians[0];
+                                btScalar* J_t1 = &jacobianData_t1.m_jacobians[0];
+                                btScalar* J_t2 = &jacobianData_t2.m_jacobians[0];
+                                
+                                btScalar* u_n = &jacobianData_normal.m_deltaVelocitiesUnitImpulse[0];
+                                btScalar* u_t1 = &jacobianData_t1.m_deltaVelocitiesUnitImpulse[0];
+                                btScalar* u_t2 = &jacobianData_t2.m_deltaVelocitiesUnitImpulse[0];
+                                
+                                btMatrix3x3 rot(normal.getX(), normal.getY(), normal.getZ(),
+                                                t1.getX(), t1.getY(), t1.getZ(),
+                                                t2.getX(), t2.getY(), t2.getZ()); // world frame to local frame
+                                const int ndof = multibodyLinkCol->m_multiBody->getNumDofs() + 6;
+                                btMatrix3x3 local_impulse_matrix = (n.m_effectiveMass_inv + OuterProduct(J_n, J_t1, J_t2, u_n, u_t1, u_t2, ndof)).inverse();
+                                c.m_c0 =  rot.transpose() * local_impulse_matrix * rot;
+                                c.jacobianData_normal = jacobianData_normal;
+                                c.jacobianData_t1 = jacobianData_t1;
+                                c.jacobianData_t2 = jacobianData_t2;
+                                c.t1 = t1;
+                                c.t2 = t2;
+                            }
+                        }
+                        psb->m_nodeRigidContacts.push_back(c);
+                    }
+                }
 			}
 		}
 		btSoftBody* psb;
@@ -1768,6 +1780,7 @@ struct btSoftColliders
 					c.m_weights = btScalar(2) / (btScalar(1) + bary.length2()) * bary;
 					c.m_face = &f;
 					// friction is handled by the nodes to prevent sticking
+<<<<<<< HEAD
 					//                    const btScalar fc = 0;
 					const btScalar fc = psb->m_cfg.kDF * m_colObj1Wrap->getCollisionObject()->getFriction();
 
@@ -1836,6 +1849,77 @@ struct btSoftColliders
 		btScalar stamargin;
 	};
 
+=======
+//                    const btScalar fc = 0;
+                    const btScalar fc = psb->m_cfg.kDF * m_colObj1Wrap->getCollisionObject()->getFriction();
+                    
+                    // the effective inverse mass of the face as in https://graphics.stanford.edu/papers/cloth-sig02/cloth.pdf
+                    ima = bary.getX()*c.m_weights.getX() * n0->m_im + bary.getY()*c.m_weights.getY() * n1->m_im + bary.getZ()*c.m_weights.getZ() * n2->m_im;
+                    c.m_c2 = ima;
+                    c.m_c3 = fc;
+                    c.m_c4 = m_colObj1Wrap->getCollisionObject()->isStaticOrKinematicObject() ? psb->m_cfg.kKHR : psb->m_cfg.kCHR;
+                    c.m_c5 = Diagonal(ima);
+                    if (cti.m_colObj->getInternalType() == btCollisionObject::CO_RIGID_BODY)
+                    {
+                        const btTransform& wtr = m_rigidBody ? m_rigidBody->getWorldTransform() : m_colObj1Wrap->getCollisionObject()->getWorldTransform();
+                        static const btMatrix3x3 iwiStatic(0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        const btMatrix3x3& iwi = m_rigidBody ? m_rigidBody->getInvInertiaTensorWorld() : iwiStatic;
+                        const btVector3 ra = contact_point - wtr.getOrigin();
+                        
+                        // we do not scale the impulse matrix by dt
+                        c.m_c0 = ImpulseMatrix(1, ima, imb, iwi, ra);
+                        c.m_c1 = ra;
+                    }
+                    else if (cti.m_colObj->getInternalType() == btCollisionObject::CO_FEATHERSTONE_LINK)
+                    {
+                        btMultiBodyLinkCollider* multibodyLinkCol = (btMultiBodyLinkCollider*)btMultiBodyLinkCollider::upcast(cti.m_colObj);
+                        if (multibodyLinkCol)
+                        {
+                            btVector3 normal = cti.m_normal;
+                            btVector3 t1 = generateUnitOrthogonalVector(normal);
+                            btVector3 t2 = btCross(normal, t1);
+                            btMultiBodyJacobianData jacobianData_normal, jacobianData_t1, jacobianData_t2;
+                            findJacobian(multibodyLinkCol, jacobianData_normal, contact_point, normal);
+                            findJacobian(multibodyLinkCol, jacobianData_t1, contact_point, t1);
+                            findJacobian(multibodyLinkCol, jacobianData_t2, contact_point, t2);
+                            
+                            btScalar* J_n = &jacobianData_normal.m_jacobians[0];
+                            btScalar* J_t1 = &jacobianData_t1.m_jacobians[0];
+                            btScalar* J_t2 = &jacobianData_t2.m_jacobians[0];
+                            
+                            btScalar* u_n = &jacobianData_normal.m_deltaVelocitiesUnitImpulse[0];
+                            btScalar* u_t1 = &jacobianData_t1.m_deltaVelocitiesUnitImpulse[0];
+                            btScalar* u_t2 = &jacobianData_t2.m_deltaVelocitiesUnitImpulse[0];
+                            
+                            btMatrix3x3 rot(normal.getX(), normal.getY(), normal.getZ(),
+                                            t1.getX(), t1.getY(), t1.getZ(),
+                                            t2.getX(), t2.getY(), t2.getZ()); // world frame to local frame
+                            const int ndof = multibodyLinkCol->m_multiBody->getNumDofs() + 6;
+                            btMatrix3x3 local_impulse_matrix = (Diagonal(ima) + OuterProduct(J_n, J_t1, J_t2, u_n, u_t1, u_t2, ndof)).inverse();
+                            c.m_c0 =  rot.transpose() * local_impulse_matrix * rot;
+                            c.jacobianData_normal = jacobianData_normal;
+                            c.jacobianData_t1 = jacobianData_t1;
+                            c.jacobianData_t2 = jacobianData_t2;
+                            c.t1 = t1;
+                            c.t2 = t2;
+                        }
+                    }
+                    psb->m_faceRigidContacts.push_back(c);
+                }
+            }
+            else
+            {
+                f.m_pcontact[3] = 0;
+            }
+        }
+        btSoftBody* psb;
+        const btCollisionObjectWrapper* m_colObj1Wrap;
+        btRigidBody* m_rigidBody;
+        btScalar dynmargin;
+        btScalar stamargin;
+    };
+    
+>>>>>>> add implicit point contact for corotated linear elasticity objects
 	//
 	// CollideVF_SS
 	//

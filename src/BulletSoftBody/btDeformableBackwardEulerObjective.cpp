@@ -33,21 +33,32 @@ btDeformableBackwardEulerObjective::~btDeformableBackwardEulerObjective()
 
 void btDeformableBackwardEulerObjective::reinitialize(bool nodeUpdated, btScalar dt)
 {
-	BT_PROFILE("reinitialize");
-	if (dt > 0)
-	{
-		setDt(dt);
-	}
-	if (nodeUpdated)
-	{
-		updateId();
-	}
-	for (int i = 0; i < m_lf.size(); ++i)
-	{
-		m_lf[i]->reinitialize(nodeUpdated);
-	}
-	m_projection.reinitialize(nodeUpdated);
-	//    m_preconditioner->reinitialize(nodeUpdated);
+    BT_PROFILE("reinitialize");
+    if (dt > 0)
+    {
+        setDt(dt);
+    }
+    if(nodeUpdated)
+    {
+        updateId();
+    }
+    for (int i = 0; i < m_lf.size(); ++i)
+    {
+        m_lf[i]->reinitialize(nodeUpdated);
+    }
+    btMatrix3x3 I;
+    I.setIdentity();
+    for (int i = 0; i < m_softBodies.size(); ++i)
+    {
+        btSoftBody* psb = m_softBodies[i];
+        for (int j = 0; j < psb->m_nodes.size(); ++j)
+        {
+            if (psb->m_nodes[j].m_im > 0)
+                psb->m_nodes[j].m_effectiveMass = I * (1.0 / psb->m_nodes[j].m_im);
+        }
+    }
+    m_projection.reinitialize(nodeUpdated);
+//    m_preconditioner->reinitialize(nodeUpdated);
 }
 
 void btDeformableBackwardEulerObjective::setDt(btScalar dt)
@@ -124,26 +135,39 @@ void btDeformableBackwardEulerObjective::updateVelocity(const TVStack& dv)
 
 void btDeformableBackwardEulerObjective::applyForce(TVStack& force, bool setZero)
 {
-	size_t counter = 0;
-	for (int i = 0; i < m_softBodies.size(); ++i)
-	{
-		btSoftBody* psb = m_softBodies[i];
-		if (!psb->isActive())
-		{
-			counter += psb->m_nodes.size();
-			continue;
-		}
-		for (int j = 0; j < psb->m_nodes.size(); ++j)
-		{
-			btScalar one_over_mass = (psb->m_nodes[j].m_im == 0) ? 0 : psb->m_nodes[j].m_im;
-			psb->m_nodes[j].m_v += one_over_mass * force[counter++];
-		}
-	}
-	if (setZero)
-	{
-		for (int i = 0; i < force.size(); ++i)
-			force[i].setZero();
-	}
+    size_t counter = 0;
+    for (int i = 0; i < m_softBodies.size(); ++i)
+    {
+        btSoftBody* psb = m_softBodies[i];
+        if (!psb->isActive())
+        {
+            counter += psb->m_nodes.size();
+            continue;
+        }
+        if (m_implicit)
+        {
+            for (int j = 0; j < psb->m_nodes.size(); ++j)
+            {
+                if (psb->m_nodes[j].m_im != 0)
+                {
+                    psb->m_nodes[j].m_v += psb->m_nodes[j].m_effectiveMass_inv * force[counter++];
+                }
+            }
+        }
+        else
+        {
+            for (int j = 0; j < psb->m_nodes.size(); ++j)
+            {
+                btScalar one_over_mass = (psb->m_nodes[j].m_im == 0) ? 0 : psb->m_nodes[j].m_im;
+                psb->m_nodes[j].m_v += one_over_mass * force[counter++];
+            }
+        }
+    }
+    if (setZero)
+    {
+        for (int i = 0; i < force.size(); ++i)
+            force[i].setZero();
+    }
 }
 
 void btDeformableBackwardEulerObjective::computeResidual(btScalar dt, TVStack& residual)
@@ -186,16 +210,62 @@ btScalar btDeformableBackwardEulerObjective::totalEnergy(btScalar dt)
 
 void btDeformableBackwardEulerObjective::applyExplicitForce(TVStack& force)
 {
-	for (int i = 0; i < m_softBodies.size(); ++i)
-	{
-		m_softBodies[i]->advanceDeformation();
-	}
-
-	for (int i = 0; i < m_lf.size(); ++i)
-	{
-		m_lf[i]->addScaledExplicitForce(m_dt, force);
-	}
-	applyForce(force, true);
+    for (int i = 0; i < m_softBodies.size(); ++i)
+    {
+        m_softBodies[i]->advanceDeformation();
+    }
+    if (m_implicit)
+    {
+        // apply forces except gravity force
+        btVector3 gravity;
+        for (int i = 0; i < m_lf.size(); ++i)
+        {
+            if (m_lf[i]->getForceType() == BT_GRAVITY_FORCE)
+            {
+                gravity = dynamic_cast<btDeformableGravityForce*>(m_lf[i])->m_gravity;
+            }
+            else
+            {
+                m_lf[i]->addScaledExplicitForce(m_dt, force);
+            }
+        }
+        for (int i = 0; i < m_lf.size(); ++i)
+        {
+            m_lf[i]->addScaledHessian(m_dt);
+        }
+        for (int i = 0; i < m_softBodies.size(); ++i)
+        {
+            btSoftBody* psb = m_softBodies[i];
+            if (psb->isActive())
+            {
+                for (int j = 0; j < psb->m_nodes.size(); ++j)
+                {
+                    // add gravity explicitly
+                    psb->m_nodes[j].m_v += m_dt * psb->m_gravityFactor * gravity;
+                }
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < m_lf.size(); ++i)
+        {
+            m_lf[i]->addScaledExplicitForce(m_dt, force);
+        }
+    }
+    // calculate inverse mass matrix for all nodes
+    for (int i = 0; i < m_softBodies.size(); ++i)
+    {
+        btSoftBody* psb = m_softBodies[i];
+        if (psb->isActive())
+        {
+            for (int j = 0; j < psb->m_nodes.size(); ++j)
+            {
+                psb->m_nodes[j].m_effectiveMass_inv = psb->m_nodes[j].m_effectiveMass.inverse();
+            }
+        }
+    }
+    applyForce(force, true);
 }
 
 void btDeformableBackwardEulerObjective::initialGuess(TVStack& dv, const TVStack& residual)
