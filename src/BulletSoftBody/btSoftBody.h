@@ -272,9 +272,9 @@ public:
 		int m_constrained;   // depth of penetration
 		int m_battach : 1;   // Attached
 		int index;
-		btVector3 m_splitv;  // velocity associated with split impulse
-        btMatrix3x3 m_effectiveMass; // effective mass in contact
-        btMatrix3x3 m_effectiveMass_inv; // inverse of effective mass
+		btVector3 m_splitv;               // velocity associated with split impulse
+		btMatrix3x3 m_effectiveMass;      // effective mass in contact
+		btMatrix3x3 m_effectiveMass_inv;  // inverse of effective mass
 	};
 	/* Link			*/
 	ATTRIBUTE_ALIGNED16(struct)
@@ -313,15 +313,17 @@ public:
 		btMatrix3x3 m_Dm_inverse;  // rest Dm^-1
 		btMatrix3x3 m_F;
 		btScalar m_element_measure;
+		btVector4 m_P_inv[3];  // first three columns of P_inv matrix
 	};
 
 	/*  TetraScratch  */
 	struct TetraScratch
 	{
-		btMatrix3x3 m_F;     // deformation gradient F
-		btScalar m_trace;    // trace of F^T * F
-		btScalar m_J;        // det(F)
-		btMatrix3x3 m_cofF;  // cofactor of F
+		btMatrix3x3 m_F;           // deformation gradient F
+		btScalar m_trace;          // trace of F^T * F
+		btScalar m_J;              // det(F)
+		btMatrix3x3 m_cofF;        // cofactor of F
+		btMatrix3x3 m_corotation;  // corotatio of the tetra
 	};
 
 	/* RContact		*/
@@ -352,6 +354,7 @@ public:
 		btScalar m_c2;     // inverse mass of node/face
 		btScalar m_c3;     // Friction
 		btScalar m_c4;     // Hardness
+		btMatrix3x3 m_c5;  // inverse effective mass
 
 		// jacobians and unit impulse responses for multibody
 		btMultiBodyJacobianData jacobianData_normal;
@@ -381,60 +384,20 @@ public:
 		btVector3 m_bary;          // Barycentric weights
 		btVector3 m_weights;       // v_contactPoint * m_weights[i] = m_face->m_node[i]->m_v;
 	};
-    
-    class DeformableRigidContact
-    {
-    public:
-        sCti m_cti;        // Contact infos
-        btMatrix3x3 m_c0;  // Impulse matrix
-        btVector3 m_c1;    // Relative anchor
-        btScalar m_c2;     // inverse mass of node/face
-        btScalar m_c3;     // Friction
-        btScalar m_c4;     // Hardness
-        btMatrix3x3 m_c5;   // inverse effective mass
-        
-        // jacobians and unit impulse responses for multibody
-        btMultiBodyJacobianData jacobianData_normal;
-        btMultiBodyJacobianData jacobianData_t1;
-        btMultiBodyJacobianData jacobianData_t2;
-        btVector3 t1;
-        btVector3 t2;
-    };
-    
-    class DeformableNodeRigidContact : public DeformableRigidContact
-    {
-    public:
-        Node* m_node;      // Owner node
-    };
-    
-    class DeformableNodeRigidAnchor : public DeformableNodeRigidContact
-    {
-    public:
-        btVector3 m_local;    // Anchor position in body space
-    };
-    
-    class DeformableFaceRigidContact : public DeformableRigidContact
-    {
-    public:
-        Face* m_face;                   // Owner face
-        btVector3 m_contactPoint;       // Contact point
-        btVector3 m_bary;               // Barycentric weights
-        btVector3 m_weights;            // v_contactPoint * m_weights[i] = m_face->m_node[i]->m_v;
-    };
-    
-    struct DeformableFaceNodeContact
-    {
-        Node* m_node;         // Node
-        Face* m_face;         // Face
-        btVector3 m_bary;     // Barycentric weights
-        btVector3 m_weights;  // v_contactPoint * m_weights[i] = m_face->m_node[i]->m_v;
-        btVector3 m_normal;   // Normal
-        btScalar m_margin;    // Margin
-        btScalar m_friction;  // Friction
-        btScalar m_imf;       // inverse mass of the face at contact point
-        btScalar m_c0;        // scale of the impulse matrix;
-    };
-    
+
+	struct DeformableFaceNodeContact
+	{
+		Node* m_node;         // Node
+		Face* m_face;         // Face
+		btVector3 m_bary;     // Barycentric weights
+		btVector3 m_weights;  // v_contactPoint * m_weights[i] = m_face->m_node[i]->m_v;
+		btVector3 m_normal;   // Normal
+		btScalar m_margin;    // Margin
+		btScalar m_friction;  // Friction
+		btScalar m_imf;       // inverse mass of the face at contact point
+		btScalar m_c0;        // scale of the impulse matrix;
+	};
+
 	/* SContact		*/
 	struct SContact
 	{

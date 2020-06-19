@@ -1648,9 +1648,6 @@ struct PhysicsServerCommandProcessorInternalData
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
 
 #ifndef SKIP_DEFORMABLE_BODY
-	btSoftBody* m_pickedSoftBody;
-	btDeformableMousePickingForce* m_mouseForce;
-	btScalar m_maxPickingForce;
 	btDeformableBodySolver* m_deformablebodySolver;
 	btAlignedObjectArray<btDeformableLagrangianForce*> m_lf;
 #endif

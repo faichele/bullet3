@@ -27,23 +27,18 @@ btScalar btDeformableMultiBodyConstraintSolver::solveDeformableGroupIterations(b
 		{
 			// rigid bodies are solved using solver body velocity, but rigid/deformable contact directly uses the velocity of the actual rigid body. So we have to do the following: Solve one iteration of the rigid/rigid contact, get the updated velocity in the solver body and update the velocity of the underlying rigid body. Then solve the rigid/deformable contact. Finally, grab the (once again) updated rigid velocity and update the velocity of the wrapping solver body
 
-        int maxIterations = m_maxOverrideNumSolverIterations > infoGlobal.m_numIterations ? m_maxOverrideNumSolverIterations : infoGlobal.m_numIterations;
-        for (int iteration = 0; iteration < maxIterations; iteration++)
-        {
-            // rigid bodies are solved using solver body velocity, but rigid/deformable contact directly uses the velocity of the actual rigid body. So we have to do the following: Solve one iteration of the rigid/rigid contact, get the updated velocity in the solver body and update the velocity of the underlying rigid body. Then solve the rigid/deformable contact. Finally, grab the (once again) updated rigid velocity and update the velocity of the wrapping solver body
-            
-            // solve rigid/rigid in solver body
-            m_leastSquaresResidual = solveSingleIteration(iteration, bodies, numBodies, manifoldPtr, numManifolds, constraints, numConstraints, infoGlobal, debugDrawer);
-            // solver body velocity -> rigid body velocity
-            solverBodyWriteBack(infoGlobal);
-            btScalar deformableResidual = m_deformableSolver->solveContactConstraints(deformableBodies,numDeformableBodies, infoGlobal);
-            // update rigid body velocity in rigid/deformable contact
-            m_leastSquaresResidual = btMax(m_leastSquaresResidual, deformableResidual);
-            // solver body velocity <- rigid body velocity
-            writeToSolverBody(bodies, numBodies, infoGlobal);
-            
-            if (m_leastSquaresResidual <= infoGlobal.m_leastSquaresResidualThreshold || (iteration >= (maxIterations - 1)))
-            {
+			// solve rigid/rigid in solver body
+			m_leastSquaresResidual = solveSingleIteration(iteration, bodies, numBodies, manifoldPtr, numManifolds, constraints, numConstraints, infoGlobal, debugDrawer);
+			// solver body velocity -> rigid body velocity
+			solverBodyWriteBack(infoGlobal);
+			btScalar deformableResidual = m_deformableSolver->solveContactConstraints(deformableBodies, numDeformableBodies, infoGlobal);
+			// update rigid body velocity in rigid/deformable contact
+			m_leastSquaresResidual = btMax(m_leastSquaresResidual, deformableResidual);
+			// solver body velocity <- rigid body velocity
+			writeToSolverBody(bodies, numBodies, infoGlobal);
+
+			if (m_leastSquaresResidual <= infoGlobal.m_leastSquaresResidualThreshold || (iteration >= (maxIterations - 1)))
+			{
 #define VERBOSE_RESIDUAL_PRINTF
 #ifdef VERBOSE_RESIDUAL_PRINTF
 				if (iteration >= (maxIterations - 1))
