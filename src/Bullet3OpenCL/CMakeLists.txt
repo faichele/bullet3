@@ -47,6 +47,41 @@ IF (BUILD_SHARED_LIBS)
   TARGET_LINK_LIBRARIES(Bullet3OpenCL_clew LinearMath Bullet3Dynamics ${CMAKE_DL_LIBS})
 ENDIF (BUILD_SHARED_LIBS)
 
+add_custom_command(
+        TARGET Bullet3OpenCL_clew PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/src/Bullet3OpenCL/BroadphaseCollision/kernels
+                ${CMAKE_BINARY_DIR}/src/Bullet3OpenCL/BroadphaseCollision/kernels)
+
+add_custom_command(
+        TARGET Bullet3OpenCL_clew PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/src/Bullet3OpenCL/NarrowphaseCollision/kernels
+                ${CMAKE_BINARY_DIR}/src/Bullet3OpenCL/NarrowphaseCollision/kernels)
+
+add_custom_command(
+        TARGET Bullet3OpenCL_clew PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/src/Bullet3OpenCL/ParallelPrimitives/kernels
+                ${CMAKE_BINARY_DIR}/src/Bullet3OpenCL/ParallelPrimitives/kernels)
+
+add_custom_command(
+        TARGET Bullet3OpenCL_clew PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/src/Bullet3OpenCL/BroadphaseCollision/kernels
+                ${CMAKE_BINARY_DIR}//src/Bullet3OpenCL/BroadphaseCollision/kernels)
+
+add_custom_command(
+        TARGET Bullet3OpenCL_clew PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/src/Bullet3OpenCL/Raycast/kernels
+                ${CMAKE_BINARY_DIR}/src/Bullet3OpenCL/Raycast/kernels)
+
+add_custom_command(
+        TARGET Bullet3OpenCL_clew PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/src/Bullet3OpenCL/RigidBody/kernels
+                ${CMAKE_BINARY_DIR}/src/Bullet3OpenCL/RigidBody/kernels)
 
 IF (INSTALL_LIBS)
 	IF (NOT INTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES)

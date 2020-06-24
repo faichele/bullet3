@@ -32,6 +32,9 @@ class b3GpuParallelLinearBvhBroadphase : public b3GpuBroadphaseInterface
 	b3AlignedObjectArray<int> m_smallAabbsMappingCpu;
 	b3AlignedObjectArray<int> m_largeAabbsMappingCpu;
 
+	b3AlignedObjectArray<int> m_collisionMasksCPU;
+	b3AlignedObjectArray<int> m_collisionGroupsCPU;
+
 public:
 	b3GpuParallelLinearBvhBroadphase(cl_context context, cl_device_id device, cl_command_queue queue);
 	virtual ~b3GpuParallelLinearBvhBroadphase() {}
@@ -56,6 +59,9 @@ public:
 	virtual b3OpenCLArray<int>& getLargeAabbIndicesGPU() { return m_largeAabbsMappingGpu; }
 
 	virtual b3AlignedObjectArray<b3SapAabb>& getAllAabbsCPU() { return m_aabbsCpu; }
+
+	virtual b3AlignedObjectArray<int>& getCollisionFilterGroups() { return m_collisionGroupsCPU; }
+	virtual b3AlignedObjectArray<int>& getCollisionFilterMasks() { return m_collisionMasksCPU; }
 
 	static b3GpuBroadphaseInterface* CreateFunc(cl_context context, cl_device_id device, cl_command_queue queue)
 	{

@@ -18,9 +18,11 @@ subject to the following restrictions:
 
 #include "Bullet3OpenCL/Initialize/b3OpenCLInclude.h"
 #include "Bullet3Collision/NarrowPhaseCollision/b3Config.h"
+#include "Bullet3Collision/NarrowPhaseCollision/shared/b3Collidable.h"
 
 #include "Bullet3Common/b3AlignedObjectArray.h"
 #include "Bullet3Collision/NarrowPhaseCollision/b3RaycastInfo.h"
+#include "Bullet3Collision/NarrowPhaseCollision/b3Contact4.h"
 
 class b3GpuRigidBodyPipeline
 {
@@ -46,7 +48,7 @@ public:
 	//int		registerConcaveMesh(b3AlignedObjectArray<b3Vector3>* vertices, b3AlignedObjectArray<int>* indices, const float* scaling);
 	//int		registerCompoundShape(b3AlignedObjectArray<b3GpuChildShape>* childShapes);
 
-	int registerPhysicsInstance(float mass, const float* position, const float* orientation, int collisionShapeIndex, int userData, bool writeInstanceToGpu);
+	int registerPhysicsInstance(float mass, const float* position, const float* orientation, int collisionShapeIndex, int userData, bool writeInstanceToGpu, int collisionFlags = b3CollisionFlags::CF_NONE, int collisionGroupMask = 0);
 	//if you passed "writeInstanceToGpu" false in the registerPhysicsInstance method (for performance) you need to call writeAllInstancesToGpu after all instances are registered
 	void writeAllInstancesToGpu();
 	void copyConstraintsToHost();
@@ -59,6 +61,11 @@ public:
 
 	void addConstraint(class b3TypedConstraint* constraint);
 	void removeConstraint(b3TypedConstraint* constraint);
+
+	const unsigned int getNumContacts();
+	const b3Contact4* getContacts();
+
+	const b3AlignedObjectArray<int>& getCollisionFlags();
 
 	void castRays(const b3AlignedObjectArray<b3RayInfo>& rays, b3AlignedObjectArray<b3RayHit>& hitResults);
 

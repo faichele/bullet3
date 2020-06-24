@@ -22,6 +22,9 @@ bool gDebugSkipLoadingBinary = false;
 #include "Bullet3Common/b3Logging.h"
 
 #include <string.h>
+#include <string>
+#include <iostream>
+#include <algorithm>
 
 #ifdef _WIN32
 #pragma warning(disable : 4996)
@@ -615,7 +618,7 @@ cl_program b3OpenCLUtils_compileCLProgramFromString(cl_context clContext, cl_dev
 #ifdef _WIN32
 		char* bla = 0;
 
-		//printf("searching for %s\n", binaryFileName);
+		printf("searching for %s\n", binaryFileName);
 
 		FILETIME modtimeBinary;
 		CreateDirectoryA(sCachedBinaryPath, 0);
@@ -660,16 +663,23 @@ cl_program b3OpenCLUtils_compileCLProgramFromString(cl_context clContext, cl_dev
 
 			if (binaryFileValid)
 			{
+				char workingDirectory[MAX_PATH];
+				GetCurrentDirectoryA(MAX_PATH, workingDirectory);
+				std::cout << workingDirectory << std::endl;
+
 				HANDLE srcFileHandle = CreateFileA(clFileNameForCaching, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
 				if (srcFileHandle == INVALID_HANDLE_VALUE)
 				{
-					const char* prefix[] = {"./", "../", "../../", "../../../", "../../../../"};
+					const char* prefix[] = {"\\.\\", "\\..\\", "\\..\\..\\", "\\..\\..\\..\\", "\\..\\..\\..\\..\\"};
 					for (int i = 0; (srcFileHandle == INVALID_HANDLE_VALUE) && i < 5; i++)
 					{
 						char relativeFileName[1024];
-						sprintf(relativeFileName, "%s%s", prefix[i], clFileNameForCaching);
-						srcFileHandle = CreateFileA(relativeFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+						sprintf(relativeFileName, "%s%s%s", workingDirectory, prefix[i], clFileNameForCaching);
+						std::string clFileName(relativeFileName);
+						std::replace(clFileName.begin(), clFileName.end(), '/', '\\');
+						std::cout << "Looking for CL source file name: " << clFileName << std::endl;
+						srcFileHandle = CreateFileA(clFileName.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 					}
 				}
 
@@ -944,12 +954,35 @@ cl_kernel b3OpenCLUtils_compileCLKernelFromString(cl_context clContext, cl_devic
 	kernel = clCreateKernel(m_cpProgram, kernelName, &localErrNum);
 	if (localErrNum != CL_SUCCESS)
 	{
-		b3Error("Error in clCreateKernel, Line %u in file %s, cannot find kernel function %s !!!\n\n", __LINE__, __FILE__, kernelName);
+		// Determine the size of the log
+		size_t log_size;
+		clGetProgramBuildInfo(m_cpProgram, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+
+		// Allocate memory for the log
+		char* log = (char*)malloc(log_size);
+
+		// Get the log
+		clGetProgramBuildInfo(m_cpProgram, device, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+
+		// Print the log
+		b3Printf("Error occurred while compiling kernel %s: '%s'\n", kernelName, log);
+
+		delete[] log;
+
+		if (pErrNum)
+			*pErrNum = localErrNum;
+
+		return 0;
+	}
+
+	/*if (localErrNum != CL_SUCCESS)
+	{
+		b3Error("Error in clCreateKernel, Line %u in file %s, cannot find kernel function '%s'!\n\n", __LINE__, __FILE__, kernelName);
 		assert(0);
 		if (pErrNum)
 			*pErrNum = localErrNum;
 		return 0;
-	}
+	}*/
 
 	if (!prog && m_cpProgram)
 	{

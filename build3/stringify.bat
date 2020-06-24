@@ -30,6 +30,7 @@ premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/Narrowpha
 
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/integrateKernel.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/integrateKernel.h" --stringname="integrateKernelCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/updateAabbsKernel.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/updateAabbsKernel.h" --stringname="updateAabbsKernelCL" stringify
+premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/markGhostObjectsKernel.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/markGhostObjectsKernel.h" --stringname="markGhostObjectsKernelCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup.h" --stringname="solverSetupCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup2.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup2.h" --stringname="solverSetup2CL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/batchingKernels.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/batchingKernels.h" --stringname="batchingKernelsCL" stringify
@@ -44,23 +45,23 @@ premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody
 
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/Raycast/kernels/rayCastKernels.cl" --headerfile="../src/Bullet3OpenCL/Raycast/kernels/rayCastKernels.h" --stringname="rayCastKernelCL" stringify
 
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/instancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/instancingVS.h" --stringname="instancingVertexShader" stringify
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/instancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/instancingPS.h" --stringname="instancingFragmentShader" stringify
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/pointSpriteVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/pointSpriteVS.h" --stringname="pointSpriteVertexShader" stringify
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/pointSpritePS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/pointSpritePS.h" --stringname="pointSpriteFragmentShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/instancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/instancingVS.h" --stringname="instancingVertexShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/instancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/instancingPS.h" --stringname="instancingFragmentShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/pointSpriteVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/pointSpriteVS.h" --stringname="pointSpriteVertexShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/pointSpritePS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/pointSpritePS.h" --stringname="pointSpriteFragmentShader" stringify
 
 
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingPS.h" --stringname="createShadowMapInstancingFragmentShader" stringify
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingVS.h" --stringname="createShadowMapInstancingVertexShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingPS.h" --stringname="createShadowMapInstancingFragmentShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/createShadowMapInstancingVS.h" --stringname="createShadowMapInstancingVertexShader" stringify
 
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingPS.h" --stringname="useShadowMapInstancingFragmentShader" stringify
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingVS.h" --stringname="useShadowMapInstancingVertexShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingPS.h" --stringname="useShadowMapInstancingFragmentShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/useShadowMapInstancingVS.h" --stringname="useShadowMapInstancingVertexShader" stringify
 
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingPS.h" --stringname="projectiveTextureInstancingFragmentShader" stringify
-premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingVS.h" --stringname="projectiveTextureInstancingVertexShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingPS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingPS.h" --stringname="projectiveTextureInstancingFragmentShader" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingVS.glsl" --headerfile="../btgui/OpenGLWindow/Shaders/projectiveTextureInstancingVS.h" --stringname="projectiveTextureInstancingVertexShader" stringify
 
 
-premake4 --file=stringifyKernel.lua --kernelfile="../Demos3/GpuDemos/broadphase/pairsKernel.cl" --headerfile="../Demos3/GpuDemos/broadphase/pairsKernel.h" --stringname="pairsKernelsCL" stringify
+rem premake4 --file=stringifyKernel.lua --kernelfile="../Demos3/GpuDemos/broadphase/pairsKernel.cl" --headerfile="../Demos3/GpuDemos/broadphase/pairsKernel.h" --stringname="pairsKernelsCL" stringify
 
 
 

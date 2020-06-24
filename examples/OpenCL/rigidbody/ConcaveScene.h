@@ -15,12 +15,14 @@
 #include "LinearMath/btTransform.h"
 #include "LinearMath/btMatrix3x3.h"
 
+#include "btOpenCLDebugDrawer.h"
+
 class CommonExampleInterface* GPUConcaveSceneCreateFunc(struct CommonExampleOptions& options);
 
 class ConcaveScene : public GpuRigidBodyDemo
 {
 public:
-	ConcaveScene(struct GUIHelperInterface* helper): GpuRigidBodyDemo(helper),
+	ConcaveScene(struct GUIHelperInterface* helper) : GpuRigidBodyDemo(helper),
 													  m_leftMouseButton(false),
 													  m_middleMouseButton(false),
 													  m_rightMouseButton(false),
@@ -31,10 +33,20 @@ public:
 													  m_mouseInitialized(false)
 	{
 		m_guiHelper = helper;
+		m_debugDrawer = new OpenCLDebugDrawer(m_guiHelper);
 	}
-	virtual ~ConcaveScene() {}
-	
+
+	virtual ~ConcaveScene()
+	{
+		if (m_debugDrawer)
+		{
+			delete m_debugDrawer;
+			m_debugDrawer = nullptr;
+		}
+	}
+
 	GUIHelperInterface* m_guiHelper;
+	OpenCLDebugDrawer* m_debugDrawer;
 
 	/* extra stuff*/
 	btVector3 m_cameraPosition;
@@ -45,7 +57,6 @@ public:
 	}
 	// btRigidBody* m_carChassis;
 	// btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& worldTransform, btCollisionShape* colSape);
-
 
 	bool m_useDefaultCamera;
 	//----------------------------
@@ -100,7 +111,7 @@ public:
 
 	virtual void createDynamicObjects(unsigned int arraySizeX = 100, unsigned int arraySizeY = 50, unsigned int arraySizeZ = 5, bool useInstancedCollisionShapes = true);
 
-	virtual void createConcaveMesh(const char* fileName, const b3Vector3& shift, const b3Vector3& scaling);
+	virtual void createConcaveMesh(const char* fileName, const b3Vector3& shift, const b3Vector3& scaling, bool ghostObject = false, float mass = 0.0f, int collisionMask = 0);
 };
 
 /*class ConcaveSphereScene : public ConcaveScene

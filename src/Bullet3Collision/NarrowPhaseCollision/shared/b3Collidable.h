@@ -17,6 +17,15 @@ enum b3ShapeTypes
 	MAX_NUM_SHAPE_TYPES,
 };
 
+enum b3CollisionFlags
+{
+	CF_NONE = 0,
+	CF_STATIC_OBJECT = 1,
+	CF_KINEMATIC_OBJECT = 2,
+	CF_GHOST_OBJECT = 4,
+	CF_CONVEYOR_OBJECT = 8
+};
+
 typedef struct b3Collidable b3Collidable_t;
 
 struct b3Collidable

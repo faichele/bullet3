@@ -21,6 +21,8 @@ subject to the following restrictions:
 
 #include "b3OpenCLInclude.h"
 
+#include <iostream>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -144,6 +146,9 @@ struct b3OpenCLUtils
 
 	static inline cl_kernel compileCLKernelFromString(cl_context clContext, cl_device_id device, const char* kernelSource, const char* kernelName, cl_int* pErrNum = 0, cl_program prog = 0, const char* additionalMacros = "")
 	{
+		std::cout << "====== OpenCL source code for kernel " << kernelName << " START =====" << std::endl;
+		std::cout << kernelSource << std::endl;
+		std::cout << "====== OpenCL source code for kernel " << kernelName << " END   =====" << std::endl;
 		return b3OpenCLUtils_compileCLKernelFromString(clContext, device, kernelSource, kernelName, pErrNum, prog, additionalMacros);
 	}
 

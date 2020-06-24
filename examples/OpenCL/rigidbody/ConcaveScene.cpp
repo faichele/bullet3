@@ -249,11 +249,49 @@ void ConcaveScene::renderScene()
 {
 	std::cout << "Graphics instances in scene: " << m_instancingRenderer->getTotalNumInstances() << std::endl;
 	std::cout << "Rigid objects in scene     : " << m_data->m_rigidBodyPipeline->getNumBodies() << std::endl;
+	physicsDebugDraw(0);
 	GpuRigidBodyDemo::renderScene();
 }
 
 void ConcaveScene::physicsDebugDraw(int debugFlags)
 {
+	unsigned int numContactPoints = m_data->m_rigidBodyPipeline->getNumContacts();
+	std::cout << "Contact point count: " << numContactPoints << std::endl;
+	if (numContactPoints > 0)
+	{
+		m_debugDrawer->clearLines();
+		btVector3 defaultContactColor(0.8, 0.4, 0.4);
+		btVector3 ghostContactColor(0.4, 0.8, 0.4);
+
+		const b3Contact4* contactPoints = m_data->m_rigidBodyPipeline->getContacts();
+		const b3AlignedObjectArray<int>& collisionFlags = m_data->m_rigidBodyPipeline->getCollisionFlags();
+		for (unsigned int k = 0; k < numContactPoints; ++k)
+		{
+			for (unsigned int l = 0; l < contactPoints[k].getNPoints(); ++l)
+			{
+				btVector3 posB(contactPoints[k].m_worldPosB[l].x, contactPoints[k].m_worldPosB[l].y, contactPoints[k].m_worldPosB[l].z);
+				btVector3 normalOnB(contactPoints[k].m_worldNormalOnB.x, contactPoints[k].m_worldNormalOnB.y, contactPoints[k].m_worldNormalOnB.z);
+				float dist = contactPoints[k].getPenetration(l);
+
+				bool ghostContact = false;
+				if (contactPoints[k].getBodyA() < collisionFlags.size() && contactPoints[k].getBodyB() < collisionFlags.size())
+				{
+					if ((collisionFlags[contactPoints[k].getBodyA()] & CF_GHOST_OBJECT) ||
+						(collisionFlags[contactPoints[k].getBodyA()] & CF_GHOST_OBJECT))
+						ghostContact = true;
+				}
+
+				// std::cout << "Draw contact point at: (" << posB.x() << ", " << posB.y() << ", " << posB.z() << "); normal: (" << normalOnB.x() << ", " << normalOnB.y() << ", " << normalOnB.z() << "); distance: " << dist << std::endl;
+				
+				if (ghostContact)
+					m_debugDrawer->drawContactPoint(posB, normalOnB, dist, 1, ghostContactColor);
+				else
+					m_debugDrawer->drawContactPoint(posB, normalOnB, dist, 1, defaultContactColor);
+			}
+		}
+
+		m_debugDrawer->drawDebugDrawerLines();
+	}
 }
 
 void ConcaveScene::initPhysics()
@@ -268,32 +306,41 @@ void ConcaveScene::exitPhysics()
 
 void ConcaveScene::setupScene()
 {
-	//char* fileName = "slopedPlane100.obj";
-	//char* fileName = "plane100.obj";
-	//char* fileName = "plane100.obj";
-
-	//char* fileName = "teddy.obj";//"plane.obj";
-	//char* fileName = "sponza_closed.obj";//"plane.obj";
-	//char* fileName = "leoTest1.obj";
-	//char* fileName = "teddy2_VHACD_CHs.obj";
-
 	const char* fileName = "samurai_monastry.obj";
 
-	b3Vector3 shift1 = b3MakeVector3(0, 0, 0);  //0,230,80);//150,-100,-120);
+	b3Vector3 shift_monastery = b3MakeVector3(0, -20, 0);  //0,230,80);//150,-100,-120);
 
-	b3Vector4 scaling = b3MakeVector4(10, 10, 10, 1);
+	b3Vector4 scaling_monastery = b3MakeVector4(10, 10, 10, 1);
+	createConcaveMesh(fileName, shift_monastery, scaling_monastery);
 
-	//createConcaveMesh(ci,"plane100.obj",shift1,scaling);
-	//createConcaveMesh(ci,"plane100.obj",shift,scaling);
+	const char* fileName_conveyor1 = "foerderband_1.obj";
+	const char* fileName_conveyor2 = "foerderband_2.obj";
+	const char* fileName_conveyor3 = "foerderband_3.obj";
+	const char* fileName_conveyor4 = "foerderband_4.obj";
 
-	//b3Vector3 shift2(0,0,0);//0,230,80);//150,-100,-120);
-	//createConcaveMesh(ci,"teddy.obj",shift2,scaling);
+	const char* fileName_conveyor1_ghost = "foerderband_1_ghost.obj";
+	const char* fileName_conveyor2_ghost = "foerderband_2_ghost.obj";
+	const char* fileName_conveyor3_ghost = "foerderband_3_ghost.obj";
+	const char* fileName_conveyor4_ghost = "foerderband_4_ghost.obj";
 
-	//b3Vector3 shift3(130,-150,-75);//0,230,80);//150,-100,-120);
-	//createConcaveMesh(ci,"leoTest1.obj",shift3,scaling);
-	createConcaveMesh(fileName, shift1, scaling);
+	b3Vector3 shift1 = b3MakeVector3(0, 5, 7.5);
+	b3Vector3 shift2 = b3MakeVector3(0, 5, 10);
+	b3Vector3 shift3 = b3MakeVector3(0, 5, 10);
+	b3Vector3 shift4 = b3MakeVector3(2, 5, 10);
 
-	createDynamicObjects();
+	b3Vector4 scaling = b3MakeVector4(1, 1, 1, 1);
+
+	createConcaveMesh(fileName_conveyor1, shift1, scaling);
+	createConcaveMesh(fileName_conveyor2, shift2, scaling);
+	createConcaveMesh(fileName_conveyor3, shift3, scaling);
+	createConcaveMesh(fileName_conveyor4, shift4, scaling);
+
+	createConcaveMesh(fileName_conveyor1_ghost, shift1, scaling, true, 0.0f, 1);
+	createConcaveMesh(fileName_conveyor2_ghost, shift2, scaling, true, 0.0f, 2);
+	createConcaveMesh(fileName_conveyor3_ghost, shift3, scaling, true, 0.0f, 3);
+	createConcaveMesh(fileName_conveyor4_ghost, shift4, scaling, true, 0.0f, 4);
+
+	createDynamicObjects(3, 3, 3);
 
 	m_data->m_rigidBodyPipeline->writeAllInstancesToGpu();
 
@@ -302,7 +349,7 @@ void ConcaveScene::setupScene()
 	sprintf(msg, "Num objects = %d", numInstances);
 }
 
-void ConcaveScene::createConcaveMesh(/*const ConstructionInfo& ci,*/ const char* fileName, const b3Vector3& shift, const b3Vector3& scaling)
+void ConcaveScene::createConcaveMesh(const char* fileName, const b3Vector3& shift, const b3Vector3& scaling, bool ghostObject, float mass, int collisionMask)
 {
 	char relativeFileName[1024];
 	const char* prefix[] = {"./data/", "../data/", "../../data/", "../../../data/", "../../../../data/"};
@@ -352,24 +399,30 @@ void ConcaveScene::createConcaveMesh(/*const ConstructionInfo& ci,*/ const char*
 		int colIndex = m_data->m_np->registerConcaveMesh(&verts, shape->m_indices, b3MakeVector3(1, 1, 1));
 
 		{
-			int strideInBytes = 9 * sizeof(float);
+			/*int strideInBytes = 9 * sizeof(float);
 			int numVertices = sizeof(cube_vertices) / strideInBytes;
 			int numIndices = sizeof(cube_indices) / sizeof(int);
 
-			int shapeId_cube = m_guiHelper->getRenderInterface()->registerShape(&cube_vertices[0], numVertices, cube_indices, numIndices);
+            int shapeId_cube = m_guiHelper->getRenderInterface()->registerShape(&cube_vertices[0], numVertices, cube_indices, numIndices);*/
 			//int shapeId = ci.m_instancingRenderer->registerShape(&cube_vertices[0],numVertices,cube_indices,numIndices);
 
 			int shapeId_shape = m_guiHelper->getRenderInterface()->registerShape(&shape->m_vertices->at(0).xyzw[0], shape->m_numvertices, &shape->m_indices->at(0), shape->m_numIndices);
 			b3Quaternion orn(0, 0, 0, 1);
 
-			b3Vector4 color = b3MakeVector4(0.3, 0.3, 1, 1.f);  //0.5);//1.f
+			b3Vector4 color = b3MakeVector4(0.3, 0.3, 0.8, 1.0);
+			if (ghostObject)
+				color = b3MakeVector4(0.2, 0.8, 0.2, 0.33);
 
 			{
-				float mass = 0.f;
 				b3Vector3 position = b3MakeVector3(0, 0, 0);
-				m_instancingRenderer->registerGraphicsInstance(shapeId_shape, position, orn, color, scaling);
-				// int id = ci.m_instancingRenderer->registerGraphicsInstance(shapeId, position, orn, color, scaling);
-				int pid = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false);
+				int graphics_id = m_instancingRenderer->registerGraphicsInstance(shapeId_shape, position, orn, color, scaling);
+				int physics_id = -1;
+
+				if (ghostObject)
+					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false, b3CollisionFlags::CF_GHOST_OBJECT, collisionMask);
+				else
+					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false);
+
 				index++;
 			}
 

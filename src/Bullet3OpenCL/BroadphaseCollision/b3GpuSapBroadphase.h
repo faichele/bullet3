@@ -74,6 +74,9 @@ public:
 	b3OpenCLArray<int> m_largeAabbsMappingGPU;
 	b3AlignedObjectArray<int> m_largeAabbsMappingCPU;
 
+	b3AlignedObjectArray<int> m_collisionMasksCPU;
+	b3AlignedObjectArray<int> m_collisionGroupsCPU;
+
 	b3OpenCLArray<b3Int4> m_overlappingPairs;
 
 	//temporary gpu work memory
@@ -138,6 +141,9 @@ public:
 	virtual b3OpenCLArray<b3Int4>& getOverlappingPairsGPU();
 	virtual b3OpenCLArray<int>& getSmallAabbIndicesGPU();
 	virtual b3OpenCLArray<int>& getLargeAabbIndicesGPU();
+
+	virtual b3AlignedObjectArray<int>& getCollisionFilterGroups();
+	virtual b3AlignedObjectArray<int>& getCollisionFilterMasks();
 };
 
 #endif  //B3_GPU_SAP_BROADPHASE_H

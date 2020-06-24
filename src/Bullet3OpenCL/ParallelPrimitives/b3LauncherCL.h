@@ -6,6 +6,7 @@
 #include "Bullet3Common/b3MinMax.h"
 #include "b3OpenCLArray.h"
 #include <stdio.h>
+#include <iostream>
 
 #define B3_DEBUG_SERIALIZE_CL
 
@@ -90,6 +91,7 @@ public:
 			m_serializationSizeInBytes += sizeof(b3KernelArgData);
 		}
 
+		// std::cout << "setConst(" << m_idx << ")" << std::endl;
 		cl_int status = clSetKernelArg(m_kernel, m_idx++, sz, &consts);
 		b3Assert(status == CL_SUCCESS);
 	}

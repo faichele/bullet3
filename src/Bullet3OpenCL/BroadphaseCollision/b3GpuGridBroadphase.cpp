@@ -101,6 +101,9 @@ void b3GpuGridBroadphase::createProxy(const b3Vector3& aabbMin, const b3Vector3&
 	m_smallAabbsMappingCPU.push_back(m_allAabbsCPU1.size());
 
 	m_allAabbsCPU1.push_back(aabb);
+
+	m_collisionMasksCPU.push_back(collisionFilterMask);
+	m_collisionGroupsCPU.push_back(collisionFilterGroup);
 }
 void b3GpuGridBroadphase::createLargeProxy(const b3Vector3& aabbMin, const b3Vector3& aabbMax, int userPtr, int collisionFilterGroup, int collisionFilterMask)
 {
@@ -112,6 +115,9 @@ void b3GpuGridBroadphase::createLargeProxy(const b3Vector3& aabbMin, const b3Vec
 	m_largeAabbsMappingCPU.push_back(m_allAabbsCPU1.size());
 
 	m_allAabbsCPU1.push_back(aabb);
+
+	m_collisionMasksCPU.push_back(collisionFilterMask);
+	m_collisionGroupsCPU.push_back(collisionFilterGroup);
 }
 
 void b3GpuGridBroadphase::calculateOverlappingPairs(int maxPairs)
@@ -335,4 +341,14 @@ b3OpenCLArray<int>& b3GpuGridBroadphase::getSmallAabbIndicesGPU()
 b3OpenCLArray<int>& b3GpuGridBroadphase::getLargeAabbIndicesGPU()
 {
 	return m_largeAabbsMappingGPU;
+}
+
+b3AlignedObjectArray<int>& b3GpuGridBroadphase::getCollisionFilterGroups()
+{
+	return m_collisionGroupsCPU;
+}
+
+b3AlignedObjectArray<int>& b3GpuGridBroadphase::getCollisionFilterMasks()
+{
+	return m_collisionMasksCPU;
 }

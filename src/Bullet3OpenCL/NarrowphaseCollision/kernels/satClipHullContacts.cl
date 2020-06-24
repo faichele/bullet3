@@ -1,8 +1,6 @@
 
 #define TRIANGLE_NUM_CONVEX_FACES 5
 
-
-
 #pragma OPENCL EXTENSION cl_amd_printf : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
@@ -41,11 +39,7 @@ typedef unsigned int u32;
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3Collidable.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 
-
-
 #define GET_NPOINTS(x) (x).m_worldNormalOnB.w
-
-
 
 #define SELECT_UINT4( b, a, condition ) select( b,a,condition )
 
@@ -55,7 +49,6 @@ typedef unsigned int u32;
 #define make_int4 (int4)
 #define make_uint2 (uint2)
 #define make_int2 (int2)
-
 
 __inline
 float fastDiv(float numerator, float denominator)
@@ -76,8 +69,6 @@ float4 cross3(float4 a, float4 b)
 {
 	return cross(a,b);
 }
-
-//#define dot3F4 dot
 
 __inline
 float dot3F4(float4 a, float4 b)
@@ -111,9 +102,6 @@ float4 qtRotate(Quaternion q, float4 vec);
 
 __inline
 Quaternion qtInvert(Quaternion q);
-
-
-
 
 __inline
 Quaternion qtMul(Quaternion a, Quaternion b)
@@ -161,15 +149,12 @@ float4 transform(const float4* p, const float4* translation, const Quaternion* o
 	return qtRotate( *orientation, *p ) + (*translation);
 }
 
-
-
 __inline
 float4 normalize3(const float4 a)
 {
 	float4 n = make_float4(a.x, a.y, a.z, 0.f);
 	return fastNormalize4( n );
 }
-
 
 __inline float4 lerp3(const float4 a,const float4 b, float  t)
 {
@@ -178,8 +163,6 @@ __inline float4 lerp3(const float4 a,const float4 b, float  t)
 						a.z + (b.z - a.z) * t,
 						0.f);
 }
-
-
 
 // Clips a face to the back of a plane, return the number of vertices out, stored in ppVtxOut
 int clipFaceGlobal(__global const float4* pVtxIn, int numVertsIn, float4 planeNormalWS,float planeEqWS, __global float4* ppVtxOut)
@@ -228,8 +211,6 @@ int clipFaceGlobal(__global const float4* pVtxIn, int numVertsIn, float4 planeNo
 	}
 	return numVertsOut;
 }
-
-
 
 // Clips a face to the back of a plane, return the number of vertices out, stored in ppVtxOut
 int clipFace(const float4* pVtxIn, int numVertsIn, float4 planeNormalWS,float planeEqWS, float4* ppVtxOut)
@@ -728,7 +709,6 @@ int extractManifoldSequential(const float4* p, int nPoints, float4 nearNormal, i
 		float4 v[64];
 		for (int i=0;i<nPoints;i++)
 			v[i] = p[i];
-		//memcpy( v, p, nPoints*sizeof(float4) );
 		PARALLEL_SUM( v, nPoints );
 		center = v[0]/(float)nPoints;
 	}
@@ -1527,8 +1507,6 @@ int	findClippingFaces(const float4 separatingNormal,
 	return numContactsOut;
 }
 
-
-
 int clipFaces(__global float4* worldVertsA1,
               __global float4* worldNormalsA1,
               __global float4* worldVertsB1,
@@ -1553,8 +1531,6 @@ int clipFaces(__global float4* worldVertsA1,
     __global float4* pVtxIn = &worldVertsB1[pairIndex*capacityWorldVertsB2];
     __global float4* pVtxOut = &worldVertsB2[pairIndex*capacityWorldVertsB2];
     
-    
-	
 	// clip polygon to back of planes of all faces of hull A that are adjacent to witness face
     
 	for(int e0=0;e0<numVertsInA;e0++)
@@ -1575,21 +1551,6 @@ int clipFaces(__global float4* worldVertsA1,
 		numVertsInB = numVertsOut;
 		numVertsOut = 0;
 	}
-    
-    //float4 planeNormalWS = worldNormalsA1[pairIndex];
-    //float planeEqWS=-dot3F4(planeNormalWS,worldVertsA1[pairIndex*capacityWorldVertsB2]);
-
-
-    
-    /*for (int i=0;i<numVertsInB;i++)
-    {
-        pVtxOut[i] = pVtxIn[i];
-    }*/
-    
-    
-    
-    
-    //numVertsInB=0;
 	
     float4 planeNormalWS = worldNormalsA1[pairIndex];
     float planeEqWS=-dot3F4(planeNormalWS,worldVertsA1[pairIndex*capacityWorldVertsB2]);
@@ -1706,10 +1667,6 @@ __kernel void   clipFacesAndFindContactsKernel(    __global const float4* separa
         
 		if (hasSeparatingAxis[i])
 		{
-            
-//			int bodyIndexA = pairs[i].x;
-	//		int bodyIndexB = pairs[i].y;
-		    
             int numLocalContactsOut = 0;
 
             int capacityWorldVertsB2 = vertexFaceCapacity;
@@ -1786,10 +1743,6 @@ __kernel void   clipFacesAndFindContactsKernel(    __global const float4* separa
 	}//	if (i<numPairs)
     
 }
-
-
-
-
 
 __kernel void   newContactReductionKernel( __global int4* pairs,
                                                    __global const b3RigidBodyData_t* rigidBodies,

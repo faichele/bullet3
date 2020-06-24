@@ -45,6 +45,9 @@ protected:
 	b3ParamsGridBroadphaseCL m_paramsCPU;
 	b3OpenCLArray<b3ParamsGridBroadphaseCL> m_paramsGPU;
 
+	b3AlignedObjectArray<int> m_collisionMasksCPU;
+	b3AlignedObjectArray<int> m_collisionGroupsCPU;
+
 	class b3RadixSort32CL* m_sorter;
 
 public:
@@ -71,6 +74,9 @@ public:
 
 	virtual b3OpenCLArray<b3SapAabb>& getAllAabbsGPU();
 	virtual b3AlignedObjectArray<b3SapAabb>& getAllAabbsCPU();
+
+	virtual b3AlignedObjectArray<int>& getCollisionFilterGroups();
+	virtual b3AlignedObjectArray<int>& getCollisionFilterMasks();
 
 	virtual b3OpenCLArray<b3Int4>& getOverlappingPairsGPU();
 	virtual b3OpenCLArray<int>& getSmallAabbIndicesGPU();

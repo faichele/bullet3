@@ -1252,6 +1252,9 @@ void b3GpuSapBroadphase::createLargeProxy(const b3Vector3& aabbMin, const b3Vect
 	m_largeAabbsMappingCPU.push_back(m_allAabbsCPU.size());
 
 	m_allAabbsCPU.push_back(aabb);
+
+	m_collisionMasksCPU.push_back(collisionFilterMask);
+	m_collisionGroupsCPU.push_back(collisionFilterGroup);
 }
 
 void b3GpuSapBroadphase::createProxy(const b3Vector3& aabbMin, const b3Vector3& aabbMax, int userPtr, int collisionFilterGroup, int collisionFilterMask)
@@ -1268,6 +1271,9 @@ void b3GpuSapBroadphase::createProxy(const b3Vector3& aabbMin, const b3Vector3& 
 	m_smallAabbsMappingCPU.push_back(m_allAabbsCPU.size());
 
 	m_allAabbsCPU.push_back(aabb);
+
+	m_collisionMasksCPU.push_back(collisionFilterMask);
+	m_collisionGroupsCPU.push_back(collisionFilterGroup);
 }
 
 cl_mem b3GpuSapBroadphase::getAabbBufferWS()
@@ -1295,4 +1301,14 @@ b3OpenCLArray<int>& b3GpuSapBroadphase::getSmallAabbIndicesGPU()
 b3OpenCLArray<int>& b3GpuSapBroadphase::getLargeAabbIndicesGPU()
 {
 	return m_largeAabbsMappingGPU;
+}
+
+b3AlignedObjectArray<int>& b3GpuSapBroadphase::getCollisionFilterGroups()
+{
+	return m_collisionGroupsCPU;
+}
+
+b3AlignedObjectArray<int>& b3GpuSapBroadphase::getCollisionFilterMasks()
+{
+	return m_collisionMasksCPU;
 }

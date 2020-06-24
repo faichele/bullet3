@@ -38,6 +38,7 @@ struct b3GpuRigidBodyPipelineInternalData
 	cl_kernel m_integrateTransformsKernel;
 	cl_kernel m_updateAabbsKernel;
 	cl_kernel m_clearOverlappingPairsKernel;
+	cl_kernel m_markGhostObjectPairsKernel;
 
 	class b3PgsJacobiSolver* m_solver;
 
@@ -53,6 +54,9 @@ struct b3GpuRigidBodyPipelineInternalData
 	b3OpenCLArray<b3SapAabb>* m_allAabbsGPU;
 	b3AlignedObjectArray<b3SapAabb> m_allAabbsCPU;
 	b3OpenCLArray<b3BroadphasePair>* m_overlappingPairsGPU;
+
+	b3OpenCLArray<int>* m_collisionFlagsGPU;
+	b3AlignedObjectArray<int> m_collisionFlagsCPU;
 
 	b3OpenCLArray<b3GpuGenericConstraint>* m_gpuConstraints;
 	b3AlignedObjectArray<b3GpuGenericConstraint> m_cpuConstraints;

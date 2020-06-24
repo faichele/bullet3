@@ -11,9 +11,10 @@ INCLUDE_DIRECTORIES(
 message(STATUS "CURRENT DIR: ${CMAKE_CURRENT_SOURCE_DIR}/ConcaveScene_Main.cpp")
 
 SET(Bullet3ConcaveScene_SRCS
-		# ../../Extras/glad/src/glad.c
-		./rigidBody/ConcaveScene.h
-		./rigidBody/ConcaveScene.cpp
+		./rigidbody/btOpenCLDebugDrawer.h
+		./rigidbody/btOpenCLDebugDrawer.cpp
+		./rigidbody/ConcaveScene.h
+		./rigidbody/ConcaveScene.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/ConcaveScene_Main.cpp
 		../../examples/OpenCL/rigidbody/GpuRigidBodyDemo.h
 		../../examples/OpenCL/rigidbody/GpuRigidBodyDemo.cpp

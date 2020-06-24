@@ -545,7 +545,7 @@ struct ColorWidth
 };
 
 ATTRIBUTE_ALIGNED16(class)
-MultithreadedDebugDrawer : public btIDebugDraw
+MultiThreadedDebugDrawer : public btIDebugDraw
 {
 	struct GUIHelperInterface* m_guiHelper;
 	int m_debugMode;
@@ -572,12 +572,12 @@ public:
 			}
 		}
 	}
-	MultithreadedDebugDrawer(GUIHelperInterface * guiHelper)
+	MultiThreadedDebugDrawer(GUIHelperInterface * guiHelper)
 		: m_guiHelper(guiHelper),
 		  m_debugMode(0)
 	{
 	}
-	virtual ~MultithreadedDebugDrawer()
+	virtual ~MultiThreadedDebugDrawer()
 	{
 	}
 	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
@@ -658,7 +658,7 @@ class MultiThreadedOpenGLGuiHelper : public GUIHelperInterface
 	b3CriticalSection* m_csGUI;
 
 public:
-	MultithreadedDebugDrawer* m_debugDraw;
+	MultiThreadedDebugDrawer* m_debugDraw;
 	virtual void drawDebugDrawerLines()
 	{
 		if (m_debugDraw)
@@ -869,7 +869,7 @@ public:
 			delete m_debugDraw;
 			m_debugDraw = 0;
 		}
-                m_debugDraw = new MultithreadedDebugDrawer(this);
+                m_debugDraw = new MultiThreadedDebugDrawer(this);
                 rbWorld->setDebugDrawer(m_debugDraw);
 
 		//m_childGuiHelper->createPhysicsDebugDrawer(rbWorld);

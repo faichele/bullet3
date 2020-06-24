@@ -37,6 +37,9 @@ void b3GpuParallelLinearBvhBroadphase::createProxy(const b3Vector3& aabbMin, con
 	m_smallAabbsMappingCpu.push_back(newAabbIndex);
 
 	m_aabbsCpu.push_back(aabb);
+
+	m_collisionMasksCPU.push_back(collisionFilterMask);
+	m_collisionGroupsCPU.push_back(collisionFilterGroup);
 }
 void b3GpuParallelLinearBvhBroadphase::createLargeProxy(const b3Vector3& aabbMin, const b3Vector3& aabbMax, int userPtr, int collisionFilterGroup, int collisionFilterMask)
 {
@@ -52,6 +55,9 @@ void b3GpuParallelLinearBvhBroadphase::createLargeProxy(const b3Vector3& aabbMin
 	m_largeAabbsMappingCpu.push_back(newAabbIndex);
 
 	m_aabbsCpu.push_back(aabb);
+
+	m_collisionMasksCPU.push_back(collisionFilterMask);
+	m_collisionGroupsCPU.push_back(collisionFilterGroup);
 }
 
 void b3GpuParallelLinearBvhBroadphase::calculateOverlappingPairs(int maxPairs)
