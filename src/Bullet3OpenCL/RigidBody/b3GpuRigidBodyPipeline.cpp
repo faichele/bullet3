@@ -403,22 +403,58 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 			B3_PROFILE("m_overlappingPairsGPU->copyToHost");
 			m_data->m_overlappingPairsGPU->copyToHost(m_data->m_broadphaseDbvt->getOverlappingPairCache()->getOverlappingPairArray());
 		}
-		if (gDumpContactStats && numContacts)
-		{
-			m_data->m_narrowphase->getContactsGpu();
+	}
 
+	if (numContacts)
+	{
+		if (gDumpContactStats)
+		{
+			const b3Contact4* contacts = m_data->m_narrowphase->getContactsCPU();
 			printf("numContacts = %d\n", numContacts);
 
 			int totalPoints = 0;
-			const b3Contact4* contacts = m_data->m_narrowphase->getContactsCPU();
-
 			for (int i = 0; i < numContacts; i++)
 			{
 				totalPoints += contacts->getNPoints();
 			}
-			printf("totalPoints=%d\n", totalPoints);
+			printf("totalPoints = %d\n", totalPoints);
 		}
 	}
+
+	//Filter out contact points involving ghost objects
+	const b3AlignedObjectArray<int>& collisionFlagsCPU = m_data->m_collisionFlagsCPU;
+	b3AlignedObjectArray<b3Contact4> filteredContacts;
+	if (numContacts)
+	{
+		const b3Contact4* contacts = m_data->m_narrowphase->getContactsCPU();
+		for (int k = 0; k < numContacts; ++k)
+		{
+			int bodyIdxA = contacts[k].getBodyA();
+			int bodyIdxB = contacts[k].getBodyB();
+			printf("Checking contact pair %i (%i - %i) if one body is-a ghost object.\n", k, bodyIdxA, bodyIdxB);
+			bool ghostContact = false;
+			if (bodyIdxA < collisionFlagsCPU.size() && bodyIdxB < collisionFlagsCPU.size())
+			{
+				if (collisionFlagsCPU[bodyIdxA] & b3CollisionFlags::CF_GHOST_OBJECT)
+				{
+					ghostContact = true;
+					printf("Body A (%i) is a ghost object\n", bodyIdxA);
+				}
+
+				if (collisionFlagsCPU[bodyIdxB] & b3CollisionFlags::CF_GHOST_OBJECT)
+				{
+					ghostContact = true;
+					printf("Body B (%i) is a ghost object\n", bodyIdxB);
+				}
+
+				if (!ghostContact)
+					filteredContacts.push_back(contacts[k]);
+			}
+		}
+
+		printf("contacts count = %i vs. filteredContacts count = %i\n", numContacts, filteredContacts.size());
+	}
+	
 
 	//convert contact points to contact constraints
 
@@ -428,8 +464,10 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 	gpuBodies.setFromOpenCLBuffer(m_data->m_narrowphase->getBodiesGpu(), m_data->m_narrowphase->getNumRigidBodies());
 	b3OpenCLArray<b3InertiaData> gpuInertias(m_data->m_context, m_data->m_queue, 0, true);
 	gpuInertias.setFromOpenCLBuffer(m_data->m_narrowphase->getBodyInertiasGpu(), m_data->m_narrowphase->getNumRigidBodies());
+	
 	b3OpenCLArray<b3Contact4> gpuContacts(m_data->m_context, m_data->m_queue, 0, true);
-	gpuContacts.setFromOpenCLBuffer(m_data->m_narrowphase->getContactsGpu(), m_data->m_narrowphase->getNumContactsGpu());
+	// gpuContacts.setFromOpenCLBuffer(m_data->m_narrowphase->getContactsGpu(), m_data->m_narrowphase->getNumContactsGpu());
+	gpuContacts.copyFromHost(filteredContacts, true);
 
 	int numJoints = m_data->m_joints.size() ? m_data->m_joints.size() : m_data->m_cpuConstraints.size();
 	if (useBullet2CpuSolver && numJoints)
@@ -459,7 +497,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 		}
 	}
 
-	if (numContacts)
+	if (filteredContacts.size() /*numContacts*/)
 	{
 #ifdef TEST_OTHER_GPU_SOLVER
 
@@ -479,7 +517,9 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 						B3_PROFILE("copyToHost");
 						gpuBodies.copyToHost(hostBodies);
 						gpuInertias.copyToHost(hostInertias);
-						gpuContacts.copyToHost(hostContacts);
+
+						// gpuContacts.copyToHost(hostContacts);
+						hostContacts = filteredContacts;
 					}
 
 					{
@@ -492,13 +532,12 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 					}
 				}
 				else
-
 				{
 					int static0Index = m_data->m_narrowphase->getStatic0Index();
 					b3JacobiSolverInfo solverInfo;
 					//m_data->m_solver3->solveContacts(    >solveGroup(&gpuBodies, &gpuInertias, &gpuContacts,solverInfo);
 					//m_data->m_solver3->solveContacts(m_data->m_narrowphase->getNumBodiesGpu(),&hostBodies[0],&hostInertias[0],numContacts,&hostContacts[0]);
-					m_data->m_solver3->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), numContacts, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
+					m_data->m_solver3->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
 				}
 			}
 			else
@@ -519,7 +558,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 #endif  //TEST_OTHER_GPU_SOLVER
 		{
 			int static0Index = m_data->m_narrowphase->getStatic0Index();
-			m_data->m_solver2->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), numContacts, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
+			m_data->m_solver2->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
 
 			//m_data->m_solver4->solveContacts(m_data->m_narrowphase->getNumBodiesGpu(), gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), numContacts, gpuContacts.getBufferCL());
 

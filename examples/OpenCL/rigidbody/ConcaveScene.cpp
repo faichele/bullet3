@@ -26,9 +26,9 @@
 
 #include <iostream>
 
-#define CONCAVE_GAPX 14
+#define CONCAVE_GAPX 5
 #define CONCAVE_GAPY 5
-#define CONCAVE_GAPZ 14
+#define CONCAVE_GAPZ 5
 
 std::shared_ptr<GLInstanceGraphicsShape> createGraphicsShapeFromWavefrontObj(tinyobj::attrib_t& attrs, std::vector<tinyobj::shape_t>& shapes)
 {
@@ -340,7 +340,7 @@ void ConcaveScene::setupScene()
 	createConcaveMesh(fileName_conveyor3_ghost, shift3, scaling, true, 0.0f, 3);
 	createConcaveMesh(fileName_conveyor4_ghost, shift4, scaling, true, 0.0f, 4);
 
-	createDynamicObjects(3, 3, 3);
+	createDynamicObjects(10, 10, 3, true, 0.1);
 
 	m_data->m_rigidBodyPipeline->writeAllInstancesToGpu();
 
@@ -436,7 +436,7 @@ void ConcaveScene::createConcaveMesh(const char* fileName, const b3Vector3& shif
 	}
 }
 
-void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int arraySizeY, unsigned int arraySizeZ, bool useInstancedCollisionShapes)
+void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int arraySizeY, unsigned int arraySizeZ, bool useInstancedCollisionShapes, float scale)
 {
 	int strideInBytes = 9 * sizeof(float);
 	int numVertices = sizeof(cube_vertices) / strideInBytes;
@@ -459,6 +459,9 @@ void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int ar
 
 	b3ConvexUtility* utilPtr = new b3ConvexUtility();
 	b3Vector4 scaling = b3MakeVector4(1, 1, 1, 1);
+
+	if (scale > 0.0f && scale <= 1.0f)
+		scaling = b3MakeVector4(scale, scale, scale, scale);
 
 	{
 		b3AlignedObjectArray<b3Vector3> verts;
