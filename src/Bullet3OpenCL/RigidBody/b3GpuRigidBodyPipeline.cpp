@@ -370,11 +370,11 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 			b3AlignedObjectArray<b3BroadphasePair> hostPairs;
 			gpuPairs.copyToHost(hostPairs);
 
-			std::cout << "Broadphase pair w components GPU dump: " << hostPairs.size() << std::endl;
+			/*std::cout << "Broadphase pair w components GPU dump: " << hostPairs.size() << std::endl;
 			for (int k = 0; k < hostPairs.size(); k++)
 				std::cout << "Pair " << k << ": " << hostPairs[k].w << std::endl;
 
-			/*for (int i = 0; i < hostPairs.size(); i++)
+			for (int i = 0; i < hostPairs.size(); i++)
 			{
 				if (hostPairs[i].x < collisionFilters.size())
 				{
@@ -431,7 +431,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 		{
 			int bodyIdxA = contacts[k].getBodyA();
 			int bodyIdxB = contacts[k].getBodyB();
-			printf("Checking contact pair %i (%i - %i) if one body is-a ghost object.\n", k, bodyIdxA, bodyIdxB);
+			// printf("Checking contact pair %i (%i - %i) if one body is-a ghost object.\n", k, bodyIdxA, bodyIdxB);
 			bool ghostContact = false;
 			if (bodyIdxA < collisionFlagsCPU.size() && bodyIdxB < collisionFlagsCPU.size())
 			{

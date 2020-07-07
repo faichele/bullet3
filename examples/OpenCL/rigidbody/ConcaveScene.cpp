@@ -308,7 +308,7 @@ void ConcaveScene::setupScene()
 {
 	const char* fileName = "samurai_monastry.obj";
 
-	b3Vector3 shift_monastery = b3MakeVector3(0, -20, 0);  //0,230,80);//150,-100,-120);
+	b3Vector3 shift_monastery = b3MakeVector3(0, -15, 0);
 
 	b3Vector4 scaling_monastery = b3MakeVector4(10, 10, 10, 1);
 	createConcaveMesh(fileName, shift_monastery, scaling_monastery);
@@ -340,7 +340,8 @@ void ConcaveScene::setupScene()
 	createConcaveMesh(fileName_conveyor3_ghost, shift3, scaling, true, 0.0f, 3);
 	createConcaveMesh(fileName_conveyor4_ghost, shift4, scaling, true, 0.0f, 4);
 
-	createDynamicObjects(10, 10, 3, true, 0.1);
+	b3Vector3 objects_origin = b3MakeVector3(0, 10, 7.5);
+	createDynamicObjects(objects_origin, 1, 1, 10, true, 0.1);
 
 	m_data->m_rigidBodyPipeline->writeAllInstancesToGpu();
 
@@ -436,7 +437,7 @@ void ConcaveScene::createConcaveMesh(const char* fileName, const b3Vector3& shif
 	}
 }
 
-void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int arraySizeY, unsigned int arraySizeZ, bool useInstancedCollisionShapes, float scale)
+void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX, unsigned int arraySizeY, unsigned int arraySizeZ, bool useInstancedCollisionShapes, float scale)
 {
 	int strideInBytes = 9 * sizeof(float);
 	int numVertices = sizeof(cube_vertices) / strideInBytes;
@@ -486,7 +487,23 @@ void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int ar
 	if (useInstancedCollisionShapes)
 		colIndex = m_data->m_np->registerConvexHullShape(utilPtr);
 
-	for (int i = 0; i < arraySizeX; i++)
+	float mass = 1;
+
+	b3Vector3 position = b3MakeVector3(objects_origin.x,
+									   objects_origin.y,
+									   objects_origin.z);
+	b3Quaternion orn(0, 0, 0, 1);
+
+	b3Vector4 color = colors[curColor];
+	curColor++;
+	curColor &= 3;
+
+	int id = m_instancingRenderer->registerGraphicsInstance(shapeId, position, orn, color, scaling);
+	int pid = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false);
+
+	index++;
+
+	/*for (int i = 0; i < arraySizeX; i++)
 	{
 		for (int j = 0; j < arraySizeY; j++)
 		{
@@ -497,9 +514,9 @@ void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int ar
 
 				float mass = 1;
 
-				b3Vector3 position = b3MakeVector3(-(arraySizeX / 2) * CONCAVE_GAPX + i * CONCAVE_GAPX,
-												   23 + j * CONCAVE_GAPY,
-												   -(arraySizeZ / 2) * CONCAVE_GAPZ + k * CONCAVE_GAPZ);
+				b3Vector3 position = b3MakeVector3(objects_origin.x + (-(arraySizeX / 2) * CONCAVE_GAPX + i * CONCAVE_GAPX),
+												   objects_origin.y + 23 + j * CONCAVE_GAPY,
+												   objects_origin.z + (-(arraySizeZ / 2) * CONCAVE_GAPZ + k * CONCAVE_GAPZ));
 				b3Quaternion orn(0, 0, 0, 1);
 
 				b3Vector4 color = colors[curColor];
@@ -512,7 +529,7 @@ void ConcaveScene::createDynamicObjects(unsigned int arraySizeX, unsigned int ar
 				index++;
 			}
 		}
-	}
+	}*/
 }
 
 /*
