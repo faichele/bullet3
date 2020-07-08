@@ -9352,6 +9352,8 @@ bool PhysicsServerCommandProcessor::processChangeDynamicsInfoCommand(const struc
 								limC->setLowerBound(lower);
 								limC->setUpperBound(upper);
 							}
+							mb->getLink(linkIndex).m_jointLowerLimit = lower;
+							mb->getLink(linkIndex).m_jointUpperLimit = upper;
 						}
 						else
 						{
@@ -9361,6 +9363,8 @@ bool PhysicsServerCommandProcessor::processChangeDynamicsInfoCommand(const struc
 								delete limC;
 								limC = 0;
 							}
+							mb->getLink(linkIndex).m_jointLowerLimit = 1;
+							mb->getLink(linkIndex).m_jointUpperLimit = -1;
 						}
 					}
 
