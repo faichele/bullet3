@@ -17,7 +17,9 @@ subject to the following restrictions:
 #include "b3GpuRigidBodyPipelineInternalData.h"
 #include "kernels/integrateKernel.h"
 #include "kernels/updateAabbsKernel.h"
+
 #include "kernels/markGhostObjectsKernel.h"
+#include "kernels/applyPushPullImpulses.h"
 
 #include "Bullet3OpenCL/Initialize/b3OpenCLUtils.h"
 #include "b3GpuNarrowPhase.h"
@@ -34,6 +36,7 @@ subject to the following restrictions:
 #define B3_RIGIDBODY_INTEGRATE_PATH "src/Bullet3OpenCL/RigidBody/kernels/integrateKernel.cl"
 #define B3_RIGIDBODY_UPDATEAABB_PATH "src/Bullet3OpenCL/RigidBody/kernels/updateAabbsKernel.cl"
 #define B3_RIGIDBODY_MARKGHOSTOBJECTS_PATH "src/Bullet3OpenCL/RigidBody/kernels/markGhostObjectsKernel.cl"
+#define B3_RIGIDBODY_APPLYPUSHPULLIMPULSES_PATH "src/Bullet3OpenCL/RigidBody/kernels/applyPushPullImpulses.cl"
 
 bool useBullet2CpuSolver = true;
 
@@ -125,6 +128,16 @@ b3GpuRigidBodyPipeline::b3GpuRigidBodyPipeline(cl_context ctx, cl_device_id devi
 
 		clReleaseProgram(prog);
 	}
+
+	{
+		cl_program prog = b3OpenCLUtils::compileCLProgramFromString(m_data->m_context, m_data->m_device, applyPushPullImpulsesCL, &errNum, "", B3_RIGIDBODY_APPLYPUSHPULLIMPULSES_PATH);
+		b3Assert(errNum == CL_SUCCESS);
+
+		m_data->m_applyPushPullImpulsesKernel = b3OpenCLUtils::compileCLKernelFromString(m_data->m_context, m_data->m_device, applyPushPullImpulsesCL, "applyPushPullImpulsesKernel", &errNum, prog);
+		b3Assert(errNum == CL_SUCCESS);
+
+		clReleaseProgram(prog);
+	}
 }
 
 b3GpuRigidBodyPipeline::~b3GpuRigidBodyPipeline()
@@ -140,6 +153,9 @@ b3GpuRigidBodyPipeline::~b3GpuRigidBodyPipeline()
 
 	if (m_data->m_markGhostObjectPairsKernel)
 		clReleaseKernel(m_data->m_markGhostObjectPairsKernel);
+
+	if (m_data->m_applyPushPullImpulsesKernel)
+		clReleaseKernel(m_data->m_applyPushPullImpulsesKernel);
 
 	delete m_data->m_raycaster;
 	delete m_data->m_solver;
@@ -454,7 +470,6 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 
 		printf("contacts count = %i vs. filteredContacts count = %i\n", numContacts, filteredContacts.size());
 	}
-	
 
 	//convert contact points to contact constraints
 
@@ -464,7 +479,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 	gpuBodies.setFromOpenCLBuffer(m_data->m_narrowphase->getBodiesGpu(), m_data->m_narrowphase->getNumRigidBodies());
 	b3OpenCLArray<b3InertiaData> gpuInertias(m_data->m_context, m_data->m_queue, 0, true);
 	gpuInertias.setFromOpenCLBuffer(m_data->m_narrowphase->getBodyInertiasGpu(), m_data->m_narrowphase->getNumRigidBodies());
-	
+
 	b3OpenCLArray<b3Contact4> gpuContacts(m_data->m_context, m_data->m_queue, 0, true);
 	// gpuContacts.setFromOpenCLBuffer(m_data->m_narrowphase->getContactsGpu(), m_data->m_narrowphase->getNumContactsGpu());
 	gpuContacts.copyFromHost(filteredContacts, true);
@@ -786,6 +801,60 @@ int b3GpuRigidBodyPipeline::registerPhysicsInstance(float mass, const float* pos
 	*/
 
 	return bodyIndex;
+}
+
+void b3GpuRigidBodyPipeline::setPhysicsInstancePushPullBehavior(int instanceIndex, float* translationalVelocity, float* rotationalVelocity)
+{
+	bool behaviorExists = false;
+	int behaviorIndex = -1;
+	for (int k = 0; k < m_data->m_bodiesPushPullBehaviorsCPU.size(); ++k)
+	{
+		if (m_data->m_bodiesPushPullBehaviorsCPU[k].m_bodyID == instanceIndex)
+		{
+			behaviorExists = true;
+			behaviorIndex = k;
+			break;
+		}
+	}
+
+	if (!behaviorExists)
+	{
+		b3RigidBodyPushPullBehavior ppBehavior;
+		ppBehavior.m_bodyID = instanceIndex;
+		ppBehavior.m_linearVel = b3MakeFloat4(translationalVelocity[0], translationalVelocity[1], translationalVelocity[2]);
+		ppBehavior.m_angularVel = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
+		m_data->m_bodiesPushPullBehaviorsCPU.push_back(ppBehavior);
+	}
+	else
+	{
+		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_linearVel = b3MakeFloat4(translationalVelocity[0], translationalVelocity[1], translationalVelocity[2]);
+		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_angularVel = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
+	}
+}
+
+void b3GpuRigidBodyPipeline::removePhysicsInstancePushPullBehavior(int instanceIndex)
+{
+	bool behaviorExists = false;
+	int behaviorIndex = -1;
+	for (int k = 0; k < m_data->m_bodiesPushPullBehaviorsCPU.size(); ++k)
+	{
+		if (m_data->m_bodiesPushPullBehaviorsCPU[k].m_bodyID == instanceIndex)
+		{
+			behaviorExists = true;
+			behaviorIndex = k;
+			break;
+		}
+	}
+
+	if (behaviorExists)
+	{
+		m_data->m_bodiesPushPullBehaviorsCPU.removeAtIndex(behaviorIndex);
+	}
+}
+
+const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& b3GpuRigidBodyPipeline::getPushPullBehaviors() const
+{
+	return m_data->m_bodiesPushPullBehaviorsCPU;
 }
 
 void b3GpuRigidBodyPipeline::castRays(const b3AlignedObjectArray<b3RayInfo>& rays, b3AlignedObjectArray<b3RayHit>& hitResults)

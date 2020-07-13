@@ -3,6 +3,7 @@
 
 #include "GpuRigidBodyDemo.h"
 #include "Bullet3Common/b3Vector3.h"
+#include "Bullet3Common/b3Quaternion.h"
 
 #include "../CommonInterfaces/CommonExampleInterface.h"
 #include "../CommonInterfaces/CommonGUIHelperInterface.h"
@@ -16,6 +17,8 @@
 #include "LinearMath/btMatrix3x3.h"
 
 #include "btOpenCLDebugDrawer.h"
+
+#include <vector>
 
 class CommonExampleInterface* GPUConcaveSceneCreateFunc(struct CommonExampleOptions& options);
 
@@ -47,6 +50,9 @@ public:
 
 	GUIHelperInterface* m_guiHelper;
 	OpenCLDebugDrawer* m_debugDrawer;
+
+	std::vector<int> m_ghostObjectColIndices;
+	std::vector<int> m_rigidBodyColIndices;
 
 	/* extra stuff*/
 	btVector3 m_cameraPosition;
@@ -109,9 +115,9 @@ public:
 
 	void setupScene();
 
-	virtual void createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX = 100, unsigned int arraySizeY = 50, unsigned int arraySizeZ = 5, bool useInstancedCollisionShapes = true, float scale = 0.1);
+	virtual void createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX = 100, unsigned int arraySizeY = 50, unsigned int arraySizeZ = 5, bool useInstancedCollisionShapes = true, float scale = 1.0f);
 
-	virtual void createConcaveMesh(const char* fileName, const b3Vector3& shift, const b3Vector3& scaling, bool ghostObject = false, float mass = 0.0f, int collisionMask = 0);
+	virtual bool createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject = false, float mass = 0.0f, int collisionMask = 0);
 };
 
 /*class ConcaveSphereScene : public ConcaveScene

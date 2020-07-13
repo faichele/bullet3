@@ -20,6 +20,8 @@
 #include "Bullet3Common/shared/b3Int4.h"
 #include "Bullet3Common/shared/b3Int2.h"
 
+#include <map>
+
 class b3ConvexUtility;
 
 struct b3GpuNarrowPhaseInternalData
@@ -73,6 +75,10 @@ struct b3GpuNarrowPhaseInternalData
 
 	b3AlignedObjectArray<class b3OptimizedBvh*> m_bvhData;
 	b3AlignedObjectArray<class b3TriangleIndexVertexArray*> m_meshInterfaces;
+
+	// Store mesh vertices and indices in raw form for debug drawing. Accessing via b3TriangleVertexArray crashes for some reason...
+	std::map<int, b3AlignedObjectArray<b3Vector3>>* m_meshVertices;
+	std::map<int, b3AlignedObjectArray<int>>* m_meshIndices;
 
 	b3AlignedObjectArray<b3QuantizedBvhNode> m_treeNodesCPU;
 	b3AlignedObjectArray<b3BvhSubtreeInfo> m_subTreesCPU;

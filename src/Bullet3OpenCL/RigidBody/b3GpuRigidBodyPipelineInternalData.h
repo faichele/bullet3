@@ -29,6 +29,8 @@ subject to the following restrictions:
 #include "Bullet3Collision/BroadPhaseCollision/b3OverlappingPair.h"
 #include "Bullet3OpenCL/RigidBody/b3GpuGenericConstraint.h"
 
+#include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
+
 struct b3GpuRigidBodyPipelineInternalData
 {
 	cl_context m_context;
@@ -38,7 +40,9 @@ struct b3GpuRigidBodyPipelineInternalData
 	cl_kernel m_integrateTransformsKernel;
 	cl_kernel m_updateAabbsKernel;
 	cl_kernel m_clearOverlappingPairsKernel;
+	
 	cl_kernel m_markGhostObjectPairsKernel;
+	cl_kernel m_applyPushPullImpulsesKernel;
 
 	class b3PgsJacobiSolver* m_solver;
 
@@ -55,8 +59,13 @@ struct b3GpuRigidBodyPipelineInternalData
 	b3AlignedObjectArray<b3SapAabb> m_allAabbsCPU;
 	b3OpenCLArray<b3BroadphasePair>* m_overlappingPairsGPU;
 
+	// Collision flag (bit-masks) arrays
 	b3OpenCLArray<int>* m_collisionFlagsGPU;
 	b3AlignedObjectArray<int> m_collisionFlagsCPU;
+
+	// Push/pull behavior arrays
+	b3OpenCLArray<b3RigidBodyPushPullBehavior>* m_bodiesPushPullBehaviorsGPU;
+	b3AlignedObjectArray<b3RigidBodyPushPullBehavior> m_bodiesPushPullBehaviorsCPU;
 
 	b3OpenCLArray<b3GpuGenericConstraint>* m_gpuConstraints;
 	b3AlignedObjectArray<b3GpuGenericConstraint> m_cpuConstraints;

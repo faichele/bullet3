@@ -6,6 +6,8 @@
 #include "Bullet3Common/b3AlignedObjectArray.h"
 #include "Bullet3Common/b3Vector3.h"
 
+#include "Bullet3OpenCL/NarrowphaseCollision/b3TriangleIndexVertexArray.h"
+
 class b3GpuNarrowPhase
 {
 protected:
@@ -33,6 +35,12 @@ public:
 	int registerFace(const b3Vector3& faceNormal, float faceConstant);
 
 	int registerConcaveMesh(b3AlignedObjectArray<b3Vector3>* vertices, b3AlignedObjectArray<int>* indices, const float* scaling);
+	// const b3AlignedObjectArray<b3TriangleIndexVertexArray*>& getConcaveMeshes();
+
+	size_t getNumConcaveMeshes() const;
+	void getConcaveMeshCollidableIDs(b3AlignedObjectArray<int>& collidableIDs);
+	bool getMeshVertices(int collidableID, b3AlignedObjectArray<b3Vector3>& vertices);
+	bool getMeshIndices(int collidableID, b3AlignedObjectArray<int>& indices);
 
 	//do they need to be merged?
 

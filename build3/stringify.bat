@@ -30,6 +30,7 @@ premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/Narrowpha
 
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/integrateKernel.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/integrateKernel.h" --stringname="integrateKernelCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/updateAabbsKernel.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/updateAabbsKernel.h" --stringname="updateAabbsKernelCL" stringify
+premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/applyPushPullImpulses.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/applyPushPullImpulses.h" --stringname="applyPushPullImpulsesCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/markGhostObjectsKernel.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/markGhostObjectsKernel.h" --stringname="markGhostObjectsKernelCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup.h" --stringname="solverSetupCL" stringify
 premake4 --file=stringifyKernel.lua --kernelfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup2.cl" --headerfile="../src/Bullet3OpenCL/RigidBody/kernels/solverSetup2.h" --stringname="solverSetup2CL" stringify

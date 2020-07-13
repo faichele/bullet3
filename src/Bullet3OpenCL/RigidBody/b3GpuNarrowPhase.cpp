@@ -90,6 +90,9 @@ b3GpuNarrowPhase::b3GpuNarrowPhase(cl_context ctx, cl_device_id device, cl_comma
 
 	//m_data->m_contactCGPU = new b3OpenCLArray<Constraint4>(ctx,queue,config.m_maxBroadphasePairs,false);
 	//m_data->m_frictionCGPU = new b3OpenCLArray<adl::Solver<adl::TYPE_CL>::allocateFrictionConstraint( m_data->m_deviceCL, config.m_maxBroadphasePairs);
+
+	m_data->m_meshVertices = new std::map<int, b3AlignedObjectArray<b3Vector3>>();
+	m_data->m_meshIndices = new std::map<int, b3AlignedObjectArray<int>>();
 }
 
 b3GpuNarrowPhase::~b3GpuNarrowPhase()
@@ -138,6 +141,10 @@ b3GpuNarrowPhase::~b3GpuNarrowPhase()
 	delete m_data->m_subTreesGPU;
 
 	delete m_data->m_convexData;
+
+	delete m_data->m_meshVertices;
+	delete m_data->m_meshIndices;
+
 	delete m_data;
 }
 
@@ -526,6 +533,22 @@ int b3GpuNarrowPhase::registerConcaveMesh(b3AlignedObjectArray<b3Vector3>* verti
 	if (collidableIndex < 0)
 		return collidableIndex;
 
+	// Store mesh vertices as separate copy for debug drawing
+	b3AlignedObjectArray<b3Vector3> meshVertices;
+	meshVertices.resize(vertices->size());
+	for (int k = 0; k < vertices->size(); k++)
+		meshVertices[k] = vertices->at(k);
+
+	m_data->m_meshVertices->insert(std::make_pair(collidableIndex, meshVertices));
+
+	// Store mesh indices as separate copy for debug drawing
+	b3AlignedObjectArray<int> meshIndices;
+	meshIndices.resize(indices->size());
+	for (int k = 0; k < indices->size(); k++)
+		meshIndices[k] = indices->at(k);
+
+	m_data->m_meshIndices->insert(std::make_pair(collidableIndex, meshIndices));
+
 	b3Collidable& col = getCollidableCpu(collidableIndex);
 
 	col.m_shapeType = SHAPE_CONCAVE_TRIMESH;
@@ -602,6 +625,43 @@ int b3GpuNarrowPhase::registerConcaveMesh(b3AlignedObjectArray<b3Vector3>* verti
 	}
 
 	return collidableIndex;
+}
+
+/*const b3AlignedObjectArray<b3TriangleIndexVertexArray*>& b3GpuNarrowPhase::getConcaveMeshes()
+{
+	return m_data->m_meshInterfaces;
+}*/
+
+size_t b3GpuNarrowPhase::getNumConcaveMeshes() const 
+{
+	return m_data->m_meshVertices->size();
+}
+
+void b3GpuNarrowPhase::getConcaveMeshCollidableIDs(b3AlignedObjectArray<int>& collidableIDs)
+{
+	collidableIDs.clear();
+	for (std::map<int, b3AlignedObjectArray<b3Vector3>>::const_iterator it = m_data->m_meshVertices->begin(); it != m_data->m_meshVertices->end(); ++it)
+		collidableIDs.push_back(it->first);
+}
+
+bool b3GpuNarrowPhase::getMeshVertices(int collidableID, b3AlignedObjectArray<b3Vector3>& vertices)
+{
+	if (m_data->m_meshVertices->find(collidableID) != m_data->m_meshVertices->end())
+	{
+		vertices = m_data->m_meshVertices->find(collidableID)->second;
+		return true;
+	}
+	return false;
+}
+
+bool b3GpuNarrowPhase::getMeshIndices(int collidableID, b3AlignedObjectArray<int>& indices)
+{
+	if (m_data->m_meshIndices->find(collidableID) != m_data->m_meshIndices->end())
+	{
+		indices = m_data->m_meshIndices->find(collidableID)->second;
+		return true;
+	}
+	return false;
 }
 
 int b3GpuNarrowPhase::registerConcaveMeshShape(b3AlignedObjectArray<b3Vector3>* vertices, b3AlignedObjectArray<int>* indices, b3Collidable& col, const float* scaling1)
