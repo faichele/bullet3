@@ -21,7 +21,6 @@ cid2 = p.createConstraint(cubeId2, -1, cubeId, -1, p.JOINT_FIXED, [0, 0, 0], [0,
 
 print(cid)
 print(p.getConstraintUniqueId(0))
-prev = [0, 0, 1]
 a = -math.pi
 while 1:
   a = a + 0.01
