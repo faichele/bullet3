@@ -296,7 +296,19 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 
 	int numRigidBodies = m_data->m_rigidBodyPipeline->getNumBodies();
 	std::cout << "Rigid body count: " << numRigidBodies << std::endl;
-	auto rigidBodies = m_data->m_np->getBodiesCpu();
+	const struct b3RigidBodyData* rigidBodies = m_data->m_np->getBodiesCpu();
+
+	for (int k = 0; k < numRigidBodies; ++k)
+	{
+		btTransform rbTransform;
+		rbTransform.setOrigin(btVector3(rigidBodies[k].m_pos.x, rigidBodies[k].m_pos.y, rigidBodies[k].m_pos.z));
+		btQuaternion bodyOrientation(rigidBodies[k].m_quat.x, rigidBodies[k].m_quat.y, rigidBodies[k].m_quat.z, rigidBodies[k].m_quat.w);
+		btMatrix3x3 bodyRotation;
+		bodyRotation.setRotation(bodyOrientation);
+		rbTransform.setBasis(bodyRotation);
+		m_debugDrawer->drawTransform(rbTransform, btScalar(4.0));
+	}
+
 	const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors = m_data->m_rigidBodyPipeline->getPushPullBehaviors();
 	std::cout << "Push-pull behaviors count: " << pushPullBehaviors.size() << std::endl;
 	for (size_t m = 0; m < pushPullBehaviors.size(); ++m)
@@ -304,17 +316,17 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 		std::cout << "Debug draw push-pull behavior: " << m << std::endl;
 		if (pushPullBehaviors[m].m_bodyID < numRigidBodies && pushPullBehaviors[m].m_bodyID >= 0)
 		{
-			btVector3 dirStart;           //(rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.x, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.y, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.z);
-			btVector3 dirEnd = dirStart;  //+ btVector3(pushPullBehaviors[m].m_linearVel.x, pushPullBehaviors[m].m_linearVel.y, pushPullBehaviors[m].m_linearVel.z);
-			
+			btVector3 dirStart(rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.x + pushPullBehaviors[m].m_bodyPosition.x, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.y + pushPullBehaviors[m].m_bodyPosition.y, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.z + pushPullBehaviors[m].m_bodyPosition.z);
+			btVector3 dirEnd = dirStart + btVector3(pushPullBehaviors[m].m_linearVel.x, pushPullBehaviors[m].m_linearVel.y, pushPullBehaviors[m].m_linearVel.z);
+
 			m_debugDrawer->drawSphere(dirStart, 0.08, ghostObjectColor);
 			m_debugDrawer->drawLine(dirStart, dirEnd, ghostObjectColor);
 
-			btQuaternion bodyOrientation;
-			btTransform endTf;
-			endTf.setOrigin(dirEnd);
-			endTf.setRotation(bodyOrientation);
-			m_debugDrawer->drawCone(0.08, 0.08, 2, endTf, ghostObjectColor);
+			/*btQuaternion bodyOrientation;
+				btTransform endTf;
+				endTf.setOrigin(dirEnd);
+				endTf.setRotation(bodyOrientation);
+				m_debugDrawer->drawCone(0.08, 0.08, 2, endTf, ghostObjectColor);*/
 
 			std::cout << " With rigid body ID: " << pushPullBehaviors[m].m_bodyID << " drawn from (" << dirStart.x() << "," << dirStart.y() << "," << dirStart.z() << ") to (" << dirEnd.x() << "," << dirEnd.y() << "," << dirEnd.z() << ")" << std::endl;
 		}
@@ -407,30 +419,30 @@ void ConcaveScene::setupScene()
 
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor1_ghost, position1, orientation, scaling, true, 0.0f, 1))
 	{
-		b3Vector3 trVel1 = b3MakeVector3(0, 0, 1);
+		b3Vector3 trVel1 = b3MakeVector3(0, 0, 5.0);
 		b3Vector3 rotVel1 = b3MakeVector3(0, 0, 0);
-		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1);
+		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, position1, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor2_ghost, position2, orientation, scaling, true, 0.0f, 2))
 	{
-		b3Vector3 trVel2 = b3MakeVector3(0, 0, 1.5);
+		b3Vector3 trVel2 = b3MakeVector3(0, 0, 2.5);
 		b3Vector3 rotVel2 = b3MakeVector3(0, 0, 0);
-		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel2, rotVel2);
+		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel2, rotVel2, position2, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor3_ghost, position3, orientation, scaling, true, 0.0f, 3))
 	{
-		b3Vector3 trVel3 = b3MakeVector3(0, 0, 3.0);
+		b3Vector3 trVel3 = b3MakeVector3(-2.0, 0, 0);
 		b3Vector3 rotVel3 = b3MakeVector3(0, 0, 0);
-		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel3, rotVel3);
+		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel3, rotVel3, position3, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor4_ghost, position4, orientation, scaling, true, 0.0f, 4))
 	{
-		b3Vector3 trVel4 = b3MakeVector3(0, 0, 2.5);
+		b3Vector3 trVel4 = b3MakeVector3(-2.5, 0, 0);
 		b3Vector3 rotVel4 = b3MakeVector3(0, 0, 0);
-		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel4, rotVel4);
+		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel4, rotVel4, position4, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 

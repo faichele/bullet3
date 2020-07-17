@@ -70,7 +70,7 @@ public:
 
 	const b3AlignedObjectArray<int>& getCollisionFlags();
 
-	void setPhysicsInstancePushPullBehavior(int instanceIndex, float* translationalVelocity, float* rotationalVelocity);
+	void setPhysicsInstancePushPullBehavior(int instanceIndex, float* translationalVelocity, float* rotationalVelocity, float* anchorPoint, float* anchorOrientation);
 	void removePhysicsInstancePushPullBehavior(int instanceIndex);
 
 	const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& getPushPullBehaviors() const;
