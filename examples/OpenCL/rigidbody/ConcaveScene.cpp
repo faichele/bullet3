@@ -390,10 +390,10 @@ void ConcaveScene::setupScene()
 	b3Vector4 scaling_plane = b3MakeVector4(250, 5, 250, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane);
 
-	const char* fileName_conveyor1 = "foerderband_1.obj";
-	const char* fileName_conveyor2 = "foerderband_2.obj";
-	const char* fileName_conveyor3 = "foerderband_3.obj";
-	const char* fileName_conveyor4 = "foerderband_4.obj";
+	const char* fileName_conveyor1 = "foerderband_1_origin.obj";
+	const char* fileName_conveyor2 = "foerderband_2_origin.obj";
+	const char* fileName_conveyor3 = "foerderband_3_origin.obj";
+	const char* fileName_conveyor4 = "foerderband_4_origin.obj";
 
 	const char* fileName_conveyor1_ghost = "foerderband_1_ghost.obj";
 	const char* fileName_conveyor2_ghost = "foerderband_2_ghost.obj";
