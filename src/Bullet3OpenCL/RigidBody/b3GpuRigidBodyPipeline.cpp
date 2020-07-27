@@ -41,7 +41,7 @@ subject to the following restrictions:
 bool useBullet2CpuSolver = true;
 
 //choice of contact solver
-bool gUseJacobi = false;
+bool gUseJacobi = true; //false;
 bool gUseDbvt = false;
 bool gDumpContactStats = true;
 bool gCalcWorldSpaceAabbOnCpu = false;
@@ -83,6 +83,7 @@ b3GpuRigidBodyPipeline::b3GpuRigidBodyPipeline(cl_context ctx, cl_device_id devi
 	m_data->m_overlappingPairsGPU = new b3OpenCLArray<b3BroadphasePair>(ctx, q, config.m_maxBroadphasePairs);
 
 	m_data->m_collisionFlagsGPU = new b3OpenCLArray<int>(ctx, q, config.m_maxConvexBodies);
+	m_data->m_bodiesPushPullBehaviorsGPU = new b3OpenCLArray<b3RigidBodyPushPullBehavior>(ctx, q, config.m_maxConvexBodies);
 
 	m_data->m_gpuConstraints = new b3OpenCLArray<b3GpuGenericConstraint>(ctx, q);
 #ifdef TEST_OTHER_GPU_SOLVER
@@ -162,6 +163,7 @@ b3GpuRigidBodyPipeline::~b3GpuRigidBodyPipeline()
 	delete m_data->m_allAabbsGPU;
 	delete m_data->m_gpuConstraints;
 	delete m_data->m_overlappingPairsGPU;
+	delete m_data->m_bodiesPushPullBehaviorsGPU;
 	delete m_data->m_collisionFlagsGPU;
 
 #ifdef TEST_OTHER_GPU_SOLVER
@@ -179,6 +181,9 @@ void b3GpuRigidBodyPipeline::reset()
 	m_data->m_cpuConstraints.resize(0);
 	m_data->m_allAabbsGPU->resize(0);
 	m_data->m_allAabbsCPU.resize(0);
+
+	m_data->m_bodiesPushPullBehaviorsCPU.resize(0);
+	m_data->m_bodiesPushPullBehaviorsGPU->resize(0);
 	m_data->m_collisionFlagsGPU->resize(0);
 	m_data->m_collisionFlagsCPU.resize(0);
 }
@@ -512,7 +517,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 		}
 	}
 
-	if (filteredContacts.size() /*numContacts*/)
+	if (filteredContacts.size() > 0)
 	{
 #ifdef TEST_OTHER_GPU_SOLVER
 
@@ -552,7 +557,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 					b3JacobiSolverInfo solverInfo;
 					//m_data->m_solver3->solveContacts(    >solveGroup(&gpuBodies, &gpuInertias, &gpuContacts,solverInfo);
 					//m_data->m_solver3->solveContacts(m_data->m_narrowphase->getNumBodiesGpu(),&hostBodies[0],&hostInertias[0],numContacts,&hostContacts[0]);
-					m_data->m_solver3->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
+ 					m_data->m_solver3->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
 				}
 			}
 			else
@@ -733,6 +738,8 @@ void b3GpuRigidBodyPipeline::writeAllInstancesToGpu()
 		m_data->m_collisionFlagsCPU[k] = collisionMasks[k];
 
 	m_data->m_collisionFlagsGPU->copyFromHost(m_data->m_collisionFlagsCPU);
+
+	m_data->m_bodiesPushPullBehaviorsGPU->copyFromHost(m_data->m_bodiesPushPullBehaviorsCPU);
 }
 
 int b3GpuRigidBodyPipeline::registerPhysicsInstance(float mass, const float* position, const float* orientation, int collidableIndex, int userIndex, bool writeInstanceToGpu, int collisionFlags, int collisionGroupMask)

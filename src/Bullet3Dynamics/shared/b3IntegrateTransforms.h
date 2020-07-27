@@ -46,11 +46,13 @@ inline void integrateSingleTransform(__global b3RigidBodyData_t* bodies, int nod
 			predictedOrn = b3QuatNormalized(predictedOrn);
 			bodies[nodeID].m_quat = predictedOrn;
 		}
-		//linear velocity
-		bodies[nodeID].m_pos += bodies[nodeID].m_linVel * timeStep;
 
+		// Correct order is acceleratio -> velocity -> position...
 		//apply gravity
 		bodies[nodeID].m_linVel += gravityAcceleration * timeStep;
+
+		//linear velocity
+		bodies[nodeID].m_pos += bodies[nodeID].m_linVel * timeStep;
 	}
 }
 

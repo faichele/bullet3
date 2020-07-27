@@ -261,6 +261,8 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 
 	btVector3 triangleColor(0.2, 0.8, 0.2);
 	btVector3 ghostObjectColor(0.8, 0.8, 0.2);
+	btVector3 pushPullColor(0.2, 0.8, 0.8);
+	btVector3 pushPullColor2(0.8, 0.2, 0.8);
 
 	m_debugDrawer->clearLines();
 
@@ -316,17 +318,17 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 		std::cout << "Debug draw push-pull behavior: " << m << std::endl;
 		if (pushPullBehaviors[m].m_bodyID < numRigidBodies && pushPullBehaviors[m].m_bodyID >= 0)
 		{
-			btVector3 dirStart(rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.x + pushPullBehaviors[m].m_bodyPosition.x, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.y + pushPullBehaviors[m].m_bodyPosition.y, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.z + pushPullBehaviors[m].m_bodyPosition.z);
+			btVector3 dirStart(rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.x + pushPullBehaviors[m].m_bodyPosition.x, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.y + pushPullBehaviors[m].m_bodyPosition.y + 1.0f, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.z + pushPullBehaviors[m].m_bodyPosition.z);
 			btVector3 dirEnd = dirStart + btVector3(pushPullBehaviors[m].m_linearVel.x, pushPullBehaviors[m].m_linearVel.y, pushPullBehaviors[m].m_linearVel.z);
 
-			m_debugDrawer->drawSphere(dirStart, 0.08, ghostObjectColor);
-			m_debugDrawer->drawLine(dirStart, dirEnd, ghostObjectColor);
-
+			m_debugDrawer->drawSphere(dirStart, 0.25, pushPullColor);
+			m_debugDrawer->drawLine(dirStart, dirEnd, pushPullColor);
+			m_debugDrawer->drawSphere(dirEnd, 0.15, pushPullColor2);
 			/*btQuaternion bodyOrientation;
-				btTransform endTf;
-				endTf.setOrigin(dirEnd);
-				endTf.setRotation(bodyOrientation);
-				m_debugDrawer->drawCone(0.08, 0.08, 2, endTf, ghostObjectColor);*/
+			btTransform endTf;
+			endTf.setOrigin(dirEnd);
+			endTf.setRotation(bodyOrientation);
+			m_debugDrawer->drawCone(0.5, 0.5, 1, endTf, pushPullColor);*/
 
 			std::cout << " With rigid body ID: " << pushPullBehaviors[m].m_bodyID << " drawn from (" << dirStart.x() << "," << dirStart.y() << "," << dirStart.z() << ") to (" << dirEnd.x() << "," << dirEnd.y() << "," << dirEnd.z() << ")" << std::endl;
 		}
@@ -395,16 +397,16 @@ void ConcaveScene::setupScene()
 	const char* fileName_conveyor3 = "foerderband_3_origin.obj";
 	const char* fileName_conveyor4 = "foerderband_4_origin.obj";
 
-	const char* fileName_conveyor1_ghost = "foerderband_1_ghost.obj";
-	const char* fileName_conveyor2_ghost = "foerderband_2_ghost.obj";
-	const char* fileName_conveyor3_ghost = "foerderband_3_ghost.obj";
-	const char* fileName_conveyor4_ghost = "foerderband_4_ghost.obj";
+	const char* fileName_conveyor1_ghost = "foerderband_1_ghost_origin.obj";
+	const char* fileName_conveyor2_ghost = "foerderband_2_ghost_origin.obj";
+	const char* fileName_conveyor3_ghost = "foerderband_3_ghost_origin.obj";
+	const char* fileName_conveyor4_ghost = "foerderband_4_ghost_origin.obj";
 
 	b3Quaternion orientation(0, 0, 0, 1);
-	b3Vector3 position1 = b3MakeVector3(0, 5, 7.5);
-	b3Vector3 position2 = b3MakeVector3(0, 5, 10);
-	b3Vector3 position3 = b3MakeVector3(0, 5, 10);
-	b3Vector3 position4 = b3MakeVector3(2, 5, 10);
+	b3Vector3 position1 = b3MakeVector3(12, 15, 25);
+	b3Vector3 position2 = b3MakeVector3(12, 5, 10.5);
+	b3Vector3 position3 = b3MakeVector3(0, 5, -0.75);
+	b3Vector3 position4 = b3MakeVector3(-18.5, 2, -0.5);
 
 	b3Vector4 scaling = b3MakeVector4(1, 1, 1, 1);
 
@@ -419,28 +421,28 @@ void ConcaveScene::setupScene()
 
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor1_ghost, position1, orientation, scaling, true, 0.0f, 1))
 	{
-		b3Vector3 trVel1 = b3MakeVector3(0, 0, 5.0);
+		b3Vector3 trVel1 = b3MakeVector3(0, -1, -5);
 		b3Vector3 rotVel1 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, position1, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor2_ghost, position2, orientation, scaling, true, 0.0f, 2))
 	{
-		b3Vector3 trVel2 = b3MakeVector3(0, 0, 2.5);
+		b3Vector3 trVel2 = b3MakeVector3(0, 0, -2.5);
 		b3Vector3 rotVel2 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel2, rotVel2, position2, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor3_ghost, position3, orientation, scaling, true, 0.0f, 3))
 	{
-		b3Vector3 trVel3 = b3MakeVector3(-2.0, 0, 0);
+		b3Vector3 trVel3 = b3MakeVector3(-2.5, 0, 0);
 		b3Vector3 rotVel3 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel3, rotVel3, position3, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor4_ghost, position4, orientation, scaling, true, 0.0f, 4))
 	{
-		b3Vector3 trVel4 = b3MakeVector3(-2.5, 0, 0);
+		b3Vector3 trVel4 = b3MakeVector3(-2.5, -1.0, 0);
 		b3Vector3 rotVel4 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel4, rotVel4, position4, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
@@ -489,6 +491,23 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 		tinyobj::attrib_t attribs;
 		b3BulletDefaultFileIO fileIO;
 		std::string err = tinyobj::LoadObj(attribs, shapes, relativeFileName, prefix[prefixIndex], &fileIO);
+
+		std::cout << "======================================================================" << std::endl;
+		std::cout << "Wavefront OBJ loaded from file: " << relativeFileName << std::endl;
+		size_t numVerts = attribs.vertices.size();
+		std::cout << "Vertices count: " << numVerts << std::endl;
+		for (size_t k = 0; k < shapes.size(); ++k)
+		{
+			const tinyobj::shape_t& shape = shapes[k];
+			size_t numIndices = shape.mesh.indices.size();
+			std::cout << "Shape " << k << " with " << numIndices << " indices." << std::endl;
+			for (size_t l = 0; l < numIndices; ++l)
+			{
+				const float vtx = attribs.vertices.at(shape.mesh.indices.at(l).vertex_index);
+				std::cout << "Vertex coord. at index: " << shape.mesh.indices.at(l).vertex_index << ": " << vtx << std::endl;
+			}
+		}
+		std::cout << "======================================================================" << std::endl;
 
 		std::shared_ptr<GLInstanceGraphicsShape> shape = createGraphicsShapeFromWavefrontObj(attribs, shapes);
 
