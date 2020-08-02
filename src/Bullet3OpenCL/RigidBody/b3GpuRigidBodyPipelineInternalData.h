@@ -30,6 +30,7 @@ subject to the following restrictions:
 #include "Bullet3OpenCL/RigidBody/b3GpuGenericConstraint.h"
 
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
+#include "Bullet3OpenCL/RigidBody/b3CpuPushPullBehaviourApplication.h"
 
 struct b3GpuRigidBodyPipelineInternalData
 {
@@ -63,10 +64,16 @@ struct b3GpuRigidBodyPipelineInternalData
 	b3OpenCLArray<int>* m_collisionFlagsGPU;
 	b3AlignedObjectArray<int> m_collisionFlagsCPU;
 
-	// Push/pull behavior arrays
+	// Push/pull behavior data
 	b3OpenCLArray<b3RigidBodyPushPullBehavior>* m_bodiesPushPullBehaviorsGPU;
 	b3AlignedObjectArray<b3RigidBodyPushPullBehavior> m_bodiesPushPullBehaviorsCPU;
+	b3OpenCLArray<b3RigidBodyBehaviorVelocities>* m_bodiesPushPullVelocitiesGPU;
 
+	b3CpuPushPullBehaviourApplication* m_pushPullBehaviorApplicationCPU;
+
+	// Host-side copy of overlapping pairs detected by the broadphase
+	b3AlignedObjectArray<b3BroadphasePair> m_overlappingPairsCPU;
+	
 	b3OpenCLArray<b3GpuGenericConstraint>* m_gpuConstraints;
 	b3AlignedObjectArray<b3GpuGenericConstraint> m_cpuConstraints;
 

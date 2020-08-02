@@ -32,6 +32,7 @@ SET(Bullet3OpenCL_clew_SRCS
 	RigidBody/b3GpuPgsContactSolver.cpp
 	RigidBody/b3GpuRigidBodyPipeline.cpp
 	RigidBody/b3Solver.cpp
+	RigidBody/b3CpuPushPullBehaviourApplication.cpp
 )
 
 
