@@ -2,14 +2,12 @@
 #ifndef B3_GPU_JACOBI_CONTACT_SOLVER_H
 #define B3_GPU_JACOBI_CONTACT_SOLVER_H
 #include "Bullet3OpenCL/Initialize/b3OpenCLInclude.h"
-//#include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3Contact4Data.h"
 #include "Bullet3OpenCL/ParallelPrimitives/b3OpenCLArray.h"
 
-//struct b3InertiaData;
-//b3InertiaData
+#include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
 
 class b3TypedConstraint;
 
@@ -44,7 +42,8 @@ public:
 	b3GpuJacobiContactSolver(cl_context ctx, cl_device_id device, cl_command_queue queue, int pairCapacity);
 	virtual ~b3GpuJacobiContactSolver();
 
-	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index);
+	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
+					   int numPushPullBehaviors, cl_mem pushPullBehavioursBuf, cl_mem pushPullVelocitiesBuf);
 	void solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, struct b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo);
 	//void  solveGroupHost(btRigidBodyCL* bodies,b3InertiaData* inertias,int numBodies,btContact4* manifoldPtr, int numManifolds,btTypedConstraint** constraints,int numConstraints,const btJacobiSolverInfo& solverInfo);
 

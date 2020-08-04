@@ -20,6 +20,15 @@ public:
 	b3Float4 m_linearVel;
 	b3Float4 m_angularVel;
 
+	b3RigidBodyPushPullBehavior() : m_bodyID(-1), m_ghostObjectID(-1)
+	{
+		m_bodyPosition = b3MakeFloat4(0, 0, 0, 0);
+		m_bodyOrientation = b3Quaternion(0, 0, 0, 1);
+		m_linearVel = b3MakeFloat4(0, 0, 0, 0);
+		m_angularVel = b3MakeFloat4(0, 0, 0, 0);
+		m_perContactPoint = false;
+	}
+
 	b3RigidBodyPushPullBehavior(const b3RigidBodyPushPullBehavior& other)
 	{
 		if (this != &other)
@@ -86,7 +95,6 @@ typedef struct b3RigidBodyBehaviorVelocities b3RigidBodyBehaviorVelocities_t;
 
 struct b3RigidBodyBehaviorVelocities
 {
-	int m_bodyID;
 	b3Float4 m_linearVel;
 	b3Float4 m_angularVel;
 

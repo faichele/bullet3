@@ -49,6 +49,8 @@ bool gUseCalculateOverlappingPairsHost = false;
 bool gIntegrateOnCpu = false;
 bool gClearPairsOnGpu = true;
 
+bool gApplyPushPullBehavioursOnCpu = true;
+
 #define TEST_OTHER_GPU_SOLVER 1
 #ifdef TEST_OTHER_GPU_SOLVER
 #include "b3GpuJacobiContactSolver.h"
@@ -188,6 +190,9 @@ void b3GpuRigidBodyPipeline::reset()
 
 	m_data->m_bodiesPushPullBehaviorsCPU.resize(0);
 	m_data->m_bodiesPushPullBehaviorsGPU->resize(0);
+	m_data->m_bodiesPushPullVelocitiesCPU.resize(0);
+	m_data->m_bodiesPushPullVelocitiesGPU->resize(0);
+	
 	m_data->m_collisionFlagsGPU->resize(0);
 	m_data->m_collisionFlagsCPU.resize(0);
 }
@@ -508,6 +513,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 			//m_data->m_solver->solveContacts(m_data->m_narrowphase->getNumBodiesGpu(),&hostBodies[0],&hostInertias[0],numContacts,contacts,numJoints, joints);
 			if (useGpu)
 			{
+				std::cout << "m_data->m_gpuSolver->solveJoints()" << std::endl;
 				m_data->m_gpuSolver->solveJoints(m_data->m_narrowphase->getNumRigidBodies(), &gpuBodies, &gpuInertias, numJoints, m_data->m_gpuConstraints);
 			}
 			else
@@ -518,6 +524,8 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 				gpuInertias.copyToHost(hostInertias);
 
 				b3TypedConstraint** joints = numJoints ? &m_data->m_joints[0] : 0;
+
+				std::cout << "m_data->m_solver->solveContacts()" << std::endl;
 				m_data->m_solver->solveContacts(m_data->m_narrowphase->getNumRigidBodies(), &hostBodies[0], &hostInertias[0], 0, 0, numJoints, joints);
 				gpuBodies.copyFromHost(hostBodies);
 			}
@@ -564,7 +572,12 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 					b3JacobiSolverInfo solverInfo;
 					//m_data->m_solver3->solveContacts(    >solveGroup(&gpuBodies, &gpuInertias, &gpuContacts,solverInfo);
 					//m_data->m_solver3->solveContacts(m_data->m_narrowphase->getNumBodiesGpu(),&hostBodies[0],&hostInertias[0],numContacts,&hostContacts[0]);
-					m_data->m_solver3->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
+					
+					std::cout << "m_data->m_solver3->solveContacts()" << std::endl;
+					m_data->m_solver3->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, 
+						gpuContacts.getBufferCL(), m_data->m_config, static0Index, 
+						m_data->m_bodiesPushPullBehaviorsCPU.size(), m_data->m_bodiesPushPullBehaviorsGPU->getBufferCL(), m_data->m_bodiesPushPullVelocitiesGPU->getBufferCL()
+						);
 				}
 			}
 			else
@@ -585,6 +598,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 #endif  //TEST_OTHER_GPU_SOLVER
 		{
 			int static0Index = m_data->m_narrowphase->getStatic0Index();
+			std::cout << "m_data->m_solver2->solveContacts()" << std::endl;
 			m_data->m_solver2->solveContacts(numBodies, gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), filteredContacts.size() /*numContacts*/, gpuContacts.getBufferCL(), m_data->m_config, static0Index);
 
 			//m_data->m_solver4->solveContacts(m_data->m_narrowphase->getNumBodiesGpu(), gpuBodies.getBufferCL(), gpuInertias.getBufferCL(), numContacts, gpuContacts.getBufferCL());
@@ -625,35 +639,60 @@ void b3GpuRigidBodyPipeline::integrate(float timeStep)
 	}
 	else
 	{
-		if (m_data->m_bodiesPushPullBehaviorsCPU.size() > 0)
+		if (numBodies)
 		{
-			b3LauncherCL launcher(m_data->m_queue, m_data->m_applyPushPullImpulsesKernel, "m_applyPushPullImpulsesKernel");
-			launcher.setBuffer(m_data->m_narrowphase->getBodiesGpu());
-
-			launcher.setConst(numBodies);
-			launcher.setConst(timeStep);
-			launcher.setConst(angularDamp);
-			launcher.setConst(m_data->m_gravity);
-
-			launcher.setBuffer(m_data->m_overlappingPairsGPU->getBufferCL());
-			launcher.setBuffer(m_data->m_bodiesPushPullBehaviorsGPU->getBufferCL());
-			launcher.setBuffer(m_data->m_bodiesPushPullVelocitiesGPU->getBufferCL());
-			launcher.setConst(m_data->m_overlappingPairsCPU.size());
-			launcher.setConst(m_data->m_bodiesPushPullBehaviorsCPU.size());
-
-			launcher.launch1D(numBodies);
-
-			/*b3AlignedObjectArray<b3RigidBodyBehaviorVelocities> hostPushPullVelocities;  //just for debugging
-			m_data->m_bodiesPushPullVelocitiesGPU->copyToHost(hostPushPullVelocities);*/
-
-			std::cout << "=== Push-pull velocity entries: " << hostPushPullVelocities.size() << " ===" << std::endl;
-			for (int k = 0; k < hostPushPullVelocities.size(); ++k)
+			if (m_data->m_bodiesPushPullBehaviorsCPU.size() > 0)
 			{
-				std::cout << "Body ID " << hostPushPullVelocities[k].m_bodyID << ": linear v = (" << hostPushPullVelocities[k].m_linearVel.x << ", " << hostPushPullVelocities[k].m_linearVel.y << ", " << hostPushPullVelocities[k].m_linearVel.z << ")"
-						  << "angular v = (" << hostPushPullVelocities[k].m_angularVel.x << ", " << hostPushPullVelocities[k].m_angularVel.y << ", " << hostPushPullVelocities[k].m_angularVel.z << ") "
-						  << std::endl;
+				if (gApplyPushPullBehavioursOnCpu)
+				{
+					b3GpuNarrowPhaseInternalData* npData = m_data->m_narrowphase->getInternalData();
+					npData->m_bodyBufferGPU->copyToHost(*npData->m_bodyBufferCPU);
+
+					b3RigidBodyData_t* bodies = &npData->m_bodyBufferCPU->at(0);
+
+					m_data->m_pushPullBehaviorApplicationCPU->applyPushPullBehaviours(
+						bodies,
+						numBodies,
+						timeStep,
+						angularDamp,
+						m_data->m_gravity,
+						m_data->m_overlappingPairsCPU,
+						m_data->m_bodiesPushPullBehaviorsCPU,
+						m_data->m_bodiesPushPullVelocitiesCPU);
+
+					npData->m_bodyBufferGPU->copyFromHost(*npData->m_bodyBufferCPU);
+				}
+				else
+				{
+					b3LauncherCL launcher(m_data->m_queue, m_data->m_applyPushPullImpulsesKernel, "m_applyPushPullImpulsesKernel");
+					launcher.setBuffer(m_data->m_narrowphase->getBodiesGpu());
+
+					launcher.setConst(numBodies);
+					launcher.setConst(timeStep);
+					launcher.setConst(angularDamp);
+					launcher.setConst(m_data->m_gravity);
+
+					launcher.setBuffer(m_data->m_overlappingPairsGPU->getBufferCL());
+					launcher.setBuffer(m_data->m_bodiesPushPullBehaviorsGPU->getBufferCL());
+					launcher.setBuffer(m_data->m_bodiesPushPullVelocitiesGPU->getBufferCL());
+					launcher.setConst(m_data->m_overlappingPairsCPU.size());
+					launcher.setConst(m_data->m_bodiesPushPullBehaviorsCPU.size());
+
+					launcher.launch1D(numBodies);
+
+					/*b3AlignedObjectArray<b3RigidBodyBehaviorVelocities> hostPushPullVelocities;  //just for debugging
+					m_data->m_bodiesPushPullVelocitiesGPU->copyToHost(hostPushPullVelocities);
+
+					std::cout << "=== Push-pull velocity entries: " << hostPushPullVelocities.size() << " ===" << std::endl;
+					for (int k = 0; k < hostPushPullVelocities.size(); ++k)
+					{
+						std::cout << "Body ID " << hostPushPullVelocities[k].m_bodyID << ": linear v = (" << hostPushPullVelocities[k].m_linearVel.x << ", " << hostPushPullVelocities[k].m_linearVel.y << ", " << hostPushPullVelocities[k].m_linearVel.z << ")"
+									<< "angular v = (" << hostPushPullVelocities[k].m_angularVel.x << ", " << hostPushPullVelocities[k].m_angularVel.y << ", " << hostPushPullVelocities[k].m_angularVel.z << ") "
+									<< std::endl;
+					}
+					std::cout << "===========================================================================" << std::endl;*/
+				}
 			}
-			std::cout << "===========================================================================" << std::endl;
 		}
 		else
 		{
@@ -874,6 +913,8 @@ void b3GpuRigidBodyPipeline::setPhysicsInstancePushPullBehavior(int instanceInde
 		ppBehavior.m_bodyPosition = b3MakeFloat4(anchorPoint[0], anchorPoint[1], anchorPoint[2]);
 		ppBehavior.m_bodyOrientation = b3Quaternion(anchorOrientation[0], anchorOrientation[1], anchorOrientation[2], anchorOrientation[3]);
 		m_data->m_bodiesPushPullBehaviorsCPU.push_back(ppBehavior);
+
+		m_data->m_pushPullBehaviorApplicationCPU->registerPushPullBehavior(ppBehavior);
 	}
 	else
 	{
@@ -881,6 +922,9 @@ void b3GpuRigidBodyPipeline::setPhysicsInstancePushPullBehavior(int instanceInde
 		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_angularVel = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
 		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_bodyPosition = b3MakeFloat4(anchorPoint[0], anchorPoint[1], anchorPoint[2]);
 		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_bodyOrientation = b3Quaternion(anchorOrientation[0], anchorOrientation[1], anchorOrientation[2], anchorOrientation[3]);
+	
+		m_data->m_pushPullBehaviorApplicationCPU->unregisterPushPullBehavior(m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex]);
+		m_data->m_pushPullBehaviorApplicationCPU->registerPushPullBehavior(m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex]);
 	}
 }
 

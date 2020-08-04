@@ -404,8 +404,8 @@ void ConcaveScene::setupScene()
 
 	b3Quaternion orientation(0, 0, 0, 1);
 	b3Vector3 position1 = b3MakeVector3(12, 15, 25);
-	b3Vector3 position2 = b3MakeVector3(12, 5, 10.5);
-	b3Vector3 position3 = b3MakeVector3(0, 5, -0.75);
+	b3Vector3 position2 = b3MakeVector3(11, 5, 10.5);
+	b3Vector3 position3 = b3MakeVector3(1, 5, -0.75);
 	b3Vector3 position4 = b3MakeVector3(-18.5, 2, -0.5);
 
 	b3Vector4 scaling = b3MakeVector4(1, 1, 1, 1);
@@ -421,28 +421,28 @@ void ConcaveScene::setupScene()
 
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor1_ghost, position1, orientation, scaling, true, 0.0f, 1))
 	{
-		b3Vector3 trVel1 = b3MakeVector3(0, -1, -5);
+		b3Vector3 trVel1 = b3MakeVector3(0, -2.5, -5);
 		b3Vector3 rotVel1 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, position1, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor2_ghost, position2, orientation, scaling, true, 0.0f, 2))
 	{
-		b3Vector3 trVel2 = b3MakeVector3(0, 0, -2.5);
+		b3Vector3 trVel2 = b3MakeVector3(0, 0, -5);
 		b3Vector3 rotVel2 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel2, rotVel2, position2, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor3_ghost, position3, orientation, scaling, true, 0.0f, 3))
 	{
-		b3Vector3 trVel3 = b3MakeVector3(-2.5, 0, 0);
+		b3Vector3 trVel3 = b3MakeVector3(-5, 0, 0);
 		b3Vector3 rotVel3 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel3, rotVel3, position3, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);
 	}
 	if (createConcaveMesh(graphicsId, physicsId, fileName_conveyor4_ghost, position4, orientation, scaling, true, 0.0f, 4))
 	{
-		b3Vector3 trVel4 = b3MakeVector3(-2.5, -1.0, 0);
+		b3Vector3 trVel4 = b3MakeVector3(-5, -2.5, 0);
 		b3Vector3 rotVel4 = b3MakeVector3(0, 0, 0);
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel4, rotVel4, position4, orientation);
 		m_ghostObjectColIndices.push_back(physicsId);

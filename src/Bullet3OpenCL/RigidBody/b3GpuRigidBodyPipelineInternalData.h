@@ -68,6 +68,7 @@ struct b3GpuRigidBodyPipelineInternalData
 	b3OpenCLArray<b3RigidBodyPushPullBehavior>* m_bodiesPushPullBehaviorsGPU;
 	b3AlignedObjectArray<b3RigidBodyPushPullBehavior> m_bodiesPushPullBehaviorsCPU;
 	b3OpenCLArray<b3RigidBodyBehaviorVelocities>* m_bodiesPushPullVelocitiesGPU;
+	b3AlignedObjectArray<b3RigidBodyBehaviorVelocities> m_bodiesPushPullVelocitiesCPU;
 
 	b3CpuPushPullBehaviourApplication* m_pushPullBehaviorApplicationCPU;
 

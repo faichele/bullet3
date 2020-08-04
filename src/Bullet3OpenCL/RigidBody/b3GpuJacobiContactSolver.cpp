@@ -696,7 +696,8 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	}
 }
 
-void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index)
+void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index, 
+	int numPushPullBehaviors, cl_mem pushPullBehavioursBuf, cl_mem pushPullVelocitiesBuf)
 //
 //
 //void  b3GpuJacobiContactSolver::solveGroup(b3OpenCLArray<b3RigidBodyData>* bodies,b3OpenCLArray<b3InertiaData>* inertias,b3OpenCLArray<b3Contact4>* manifoldPtr,const btJacobiSolverInfo& solverInfo)
