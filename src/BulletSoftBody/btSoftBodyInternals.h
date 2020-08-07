@@ -1686,7 +1686,7 @@ struct btSoftColliders
 						c.m_c2 = ima;
 						c.m_c3 = fc;
 						c.m_c4 = m_colObj1Wrap->getCollisionObject()->isStaticOrKinematicObject() ? psb->m_cfg.kKHR : psb->m_cfg.kCHR;
-						c.m_c5 = n.m_effectiveMass_inv;
+                        c.m_c5 = n.m_effectiveMass_inv;
 
 						if (cti.m_colObj->getInternalType() == btCollisionObject::CO_RIGID_BODY)
 						{
