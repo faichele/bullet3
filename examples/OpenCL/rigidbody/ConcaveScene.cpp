@@ -208,11 +208,13 @@ bool ConcaveScene::mouseMoveCallback(float x, float y)
 			{
 				cameraDistance -= xDelta * m_mouseMoveMultiplier * 0.01f;
 				cameraDistance -= yDelta * m_mouseMoveMultiplier * 0.01f;
-				if (cameraDistance < 1)
-					cameraDistance = 1;
-				if (cameraDistance > 1000)
-					cameraDistance = 1000;
+				if (cameraDistance < m_minCameraDistance)
+					cameraDistance = m_minCameraDistance;
+				if (cameraDistance > m_maxCameraDistance)
+					cameraDistance = m_maxCameraDistance;
 			}
+
+			std::cout << "CameraDistance: " << cameraDistance << std::endl;
 			camera->setCameraDistance(cameraDistance);
 			camera->setCameraPitch(pitch);
 			camera->setCameraYaw(yaw);
@@ -319,7 +321,7 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 		if (pushPullBehaviors[m].m_bodyID < numRigidBodies && pushPullBehaviors[m].m_bodyID >= 0)
 		{
 			btVector3 dirStart(rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.x + pushPullBehaviors[m].m_bodyPosition.x, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.y + pushPullBehaviors[m].m_bodyPosition.y + 1.0f, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.z + pushPullBehaviors[m].m_bodyPosition.z);
-			btVector3 dirEnd = dirStart + btVector3(pushPullBehaviors[m].m_linearVel.x, pushPullBehaviors[m].m_linearVel.y, pushPullBehaviors[m].m_linearVel.z);
+			btVector3 dirEnd = dirStart + btVector3(pushPullBehaviors[m].m_linearAcc.x, pushPullBehaviors[m].m_linearAcc.y, pushPullBehaviors[m].m_linearAcc.z);
 
 			m_debugDrawer->drawSphere(dirStart, 0.25, pushPullColor);
 			m_debugDrawer->drawLine(dirStart, dirEnd, pushPullColor);

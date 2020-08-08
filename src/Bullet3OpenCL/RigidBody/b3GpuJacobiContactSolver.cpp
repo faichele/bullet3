@@ -33,6 +33,10 @@ struct b3GpuJacobiSolverInternalData
 
 	b3OpenCLArray<b3GpuConstraint4>* m_contactConstraints;
 
+	// Push-pull behavior data (local copy)
+	b3OpenCLArray<b3RigidBodyPushPullBehavior>* m_pushPullBehaviors;
+	b3OpenCLArray<b3RigidBodyBehaviorVelocities>* m_pushPullVelocities;
+
 	b3FillCL* m_filler;
 
 	cl_kernel m_countBodiesKernel;
@@ -58,6 +62,9 @@ b3GpuJacobiContactSolver::b3GpuJacobiContactSolver(cl_context ctx, cl_device_id 
 	m_data->m_contactConstraints = new b3OpenCLArray<b3GpuConstraint4>(m_context, m_queue);
 	m_data->m_deltaLinearVelocities = new b3OpenCLArray<b3Vector3>(m_context, m_queue);
 	m_data->m_deltaAngularVelocities = new b3OpenCLArray<b3Vector3>(m_context, m_queue);
+
+	m_data->m_pushPullBehaviors = new b3OpenCLArray<b3RigidBodyPushPullBehavior>(m_context, m_queue);
+	m_data->m_pushPullVelocities = new b3OpenCLArray<b3RigidBodyBehaviorVelocities>(m_context, m_queue);
 
 	cl_int pErrNum;
 	const char* additionalMacros = "";
@@ -97,6 +104,9 @@ b3GpuJacobiContactSolver::~b3GpuJacobiContactSolver()
 	clReleaseKernel(m_data->m_updateBodyVelocitiesKernel);
 	clReleaseKernel(m_data->m_clearVelocitiesKernel);
 
+	delete m_data->m_pushPullBehaviors;
+	delete m_data->m_pushPullVelocities;
+
 	delete m_data->m_deltaLinearVelocities;
 	delete m_data->m_deltaAngularVelocities;
 	delete m_data->m_contactConstraints;
@@ -106,6 +116,17 @@ b3GpuJacobiContactSolver::~b3GpuJacobiContactSolver()
 	delete m_data->m_filler;
 	delete m_data->m_scan;
 	delete m_data;
+}
+
+void b3GpuJacobiContactSolver::setPushPullBehaviorData(const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& ppBehaviors, const b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& ppVelocities)
+{
+	std::cout << "b3GpuJacobiContactSolver::setPushPullBehaviorData(): " << ppBehaviors.size() << " behaviors." << std::endl;
+	for (int k = 0; k < ppBehaviors.size(); ++k)
+	{
+		std::cout << " - Behavior " << k << ": body ID " << ppBehaviors[k].m_bodyID << ", ghost object ID " << ppBehaviors[k].m_ghostObjectID << std::endl;
+	}
+	m_data->m_pushPullBehaviors->copyFromHost(ppBehaviors);
+	m_data->m_pushPullVelocities->copyFromHost(ppVelocities);
 }
 
 b3Vector3 make_float4(float v)
@@ -696,14 +717,14 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	}
 }
 
-void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index, 
-	int numPushPullBehaviors, cl_mem pushPullBehavioursBuf, cl_mem pushPullVelocitiesBuf)
-//
-//
-//void  b3GpuJacobiContactSolver::solveGroup(b3OpenCLArray<b3RigidBodyData>* bodies,b3OpenCLArray<b3InertiaData>* inertias,b3OpenCLArray<b3Contact4>* manifoldPtr,const btJacobiSolverInfo& solverInfo)
+void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
+											 b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
 {
 	b3JacobiSolverInfo solverInfo;
 	solverInfo.m_fixedBodyIndex = static0Index;
+
+	std::cout << "Push-pull behaviours count           : " << pushPullBehaviours.size() << std::endl;
+	std::cout << "Push-pull behaviours velocities count: " << pushPullVelocities.size() << std::endl;
 
 	B3_PROFILE("b3GpuJacobiContactSolver::solveGroup");
 
@@ -803,6 +824,10 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 			launcher.setConst(solverInfo.m_positionConstraintCoeff);
 			launcher.setConst(solverInfo.m_fixedBodyIndex);
 			launcher.setConst(numManifolds);
+
+			launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
+			launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
+			launcher.setConst(pushPullBehaviours.size());
 
 			launcher.launch1D(numManifolds);
 			clFinish(m_queue);

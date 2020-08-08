@@ -15,7 +15,7 @@ subject to the following restrictions:
 
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3Contact4Data.h"
 
-#pragma OPENCL EXTENSION cl_amd_printf : enable
+// #pragma OPENCL EXTENSION cl_amd_printf : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
@@ -340,9 +340,6 @@ float4 qtInvRotate(const Quaternion q, float4 vec)
 	return qtRotate( qtInvert( q ), vec );
 }
 
-
-
-
 #define WG_SIZE 64
 
 typedef struct
@@ -357,8 +354,6 @@ typedef struct
 	float m_restituitionCoeff;
 	float m_frictionCoeff;
 } Body;
-
-
 
 typedef struct
 {
@@ -384,10 +379,28 @@ typedef struct
 	u32 m_paddings;
 } Constraint4;
 
+typedef struct
+{
+	u32 m_bodyID;
+	u32 m_ghostObjectID;
+	float4 m_bodyPosition;
+	Quaternion m_bodyOrientation;
+	int m_perContactPoint;
 
+	float4 m_linearAcc;
+	float4 m_angularAcc;
+} b3RigidBodyPushPullBehavior;
 
+#define B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS 10
 
+typedef struct
+{
+	float4 m_linearAcc;
+	float4 m_angularAcc;
 
+	float4 m_linearVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
+	float4 m_angularVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
+} b3RigidBodyBehaviorVelocities;
 
 __kernel void CountBodiesKernel(__global struct b3Contact4Data* manifoldPtr, __global unsigned int* bodyCount, __global int2* contactConstraintOffsets, int numContactManifolds, int fixedBodyIndex)
 {
@@ -519,7 +532,8 @@ void btPlaneSpace1 (float4 n, float4* p, float4* q);
 void solveContact(__global Constraint4* cs,
 			float4 posA, float4* linVelA, float4* angVelA, float invMassA, Matrix3x3 invInertiaA,
 			float4 posB, float4* linVelB, float4* angVelB, float invMassB, Matrix3x3 invInertiaB,
-			float4* dLinVelA, float4* dAngVelA, float4* dLinVelB, float4* dAngVelB)
+			float4* dLinVelA, float4* dAngVelA, float4* dLinVelB, float4* dAngVelB,
+			__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
 {
 	float minRambdaDt = 0;
 	float maxRambdaDt = FLT_MAX;
@@ -570,13 +584,10 @@ void solveContact(__global Constraint4* cs,
 	}
 }
 
-
-//	solveContactConstraint( gBodies, gShapes, &gConstraints[i] ,contactConstraintOffsets,offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities);
-
-
 void solveContactConstraint(__global Body* gBodies, __global Shape* gShapes, __global Constraint4* ldsCs, 
 __global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
-__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities)
+__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities, 
+__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
 {
 
 	//float frictionCoeff = ldsCs[0].m_linear.w;
@@ -621,8 +632,9 @@ __global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities)
 		dAngVelB = deltaAngularVelocities[splitIndexB];
 	}
 
-	solveContact( ldsCs, posA, &linVelA, &angVelA, invMassA, invInertiaA,
-			posB, &linVelB, &angVelB, invMassB, invInertiaB ,&dLinVelA, &dAngVelA, &dLinVelB, &dAngVelB);
+	solveContact(ldsCs, posA, &linVelA, &angVelA, invMassA, invInertiaA,
+			posB, &linVelB, &angVelB, invMassB, invInertiaB ,&dLinVelA, &dAngVelA, &dLinVelB, &dAngVelB,
+			gPushPullBehaviors, gPushPullVelocities, numPushPullBehaviors);
 
 	if (invMassA)
 	{
@@ -640,13 +652,13 @@ __global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities)
 
 __kernel void SolveContactJacobiKernel(__global Constraint4* gConstraints, __global Body* gBodies, __global Shape* gShapes ,
 __global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
-float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds
-)
+float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds, 
+__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
 {
 	int i = GET_GLOBAL_IDX;
-	if (i<numManifolds)
+	if (i < numManifolds)
 	{
-		solveContactConstraint( gBodies, gShapes, &gConstraints[i] ,&contactConstraintOffsets[i],offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities);
+		solveContactConstraint(gBodies, gShapes, &gConstraints[i] ,&contactConstraintOffsets[i],offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities, gPushPullBehaviors, gPushPullVelocities, numPushPullBehaviors);
 	}
 }
 
@@ -657,7 +669,7 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 							__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
 							__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities)
 {
-	float frictionCoeff = 0.7f;//ldsCs[0].m_linear.w;
+	float frictionCoeff = 0.33f; //ldsCs[0].m_linear.w;
 	int aIdx = ldsCs[0].m_bodyA;
 	int bIdx = ldsCs[0].m_bodyB;
 
@@ -700,22 +712,19 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 		dAngVelB = deltaAngularVelocities[splitIndexB];
 	}
 
-
-
-
 	{
 		float maxRambdaDt[4] = {FLT_MAX,FLT_MAX,FLT_MAX,FLT_MAX};
 		float minRambdaDt[4] = {0.f,0.f,0.f,0.f};
 
 		float sum = 0;
-		for(int j=0; j<4; j++)
+		for(int j = 0; j < 4; j++)
 		{
 			sum +=ldsCs[0].m_appliedRambdaDt[j];
 		}
-		frictionCoeff = 0.7f;
-		for(int j=0; j<4; j++)
+		// frictionCoeff = 0.7f;
+		for(int j = 0; j < 4; j++)
 		{
-			maxRambdaDt[j] = frictionCoeff*sum;
+			maxRambdaDt[j] = frictionCoeff * sum;
 			minRambdaDt[j] = -maxRambdaDt[j];
 		}
 
@@ -778,9 +787,6 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 				}
 			}
 		}
-
-		
-		
 	}
 
 	if (invMassA)
@@ -793,8 +799,6 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 		deltaLinearVelocities[splitIndexB] = dLinVelB;
 		deltaAngularVelocities[splitIndexB] = dAngVelB;
 	}
- 
-
 }
 
 

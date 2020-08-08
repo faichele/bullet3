@@ -42,8 +42,10 @@ public:
 	b3GpuJacobiContactSolver(cl_context ctx, cl_device_id device, cl_command_queue queue, int pairCapacity);
 	virtual ~b3GpuJacobiContactSolver();
 
-	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
-					   int numPushPullBehaviors, cl_mem pushPullBehavioursBuf, cl_mem pushPullVelocitiesBuf);
+	void setPushPullBehaviorData(const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>&, const b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>&);
+
+	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index, 
+		b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
 	void solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, struct b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo);
 	//void  solveGroupHost(btRigidBodyCL* bodies,b3InertiaData* inertias,int numBodies,btContact4* manifoldPtr, int numManifolds,btTypedConstraint** constraints,int numConstraints,const btJacobiSolverInfo& solverInfo);
 

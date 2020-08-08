@@ -27,13 +27,13 @@ __kernel void applyPushPullImpulsesKernel(__global b3RigidBodyData_t* bodies, co
 					{
 						if (pushPullBehaviors[k].m_bodyID == collidingPairs[i].x || pushPullBehaviors[k].m_bodyID == collidingPairs[i].y)
 						{
-							ppLinVel.x += pushPullBehaviors[k].m_linearVel.x;
-							ppLinVel.y += pushPullBehaviors[k].m_linearVel.y;
-							ppLinVel.z += pushPullBehaviors[k].m_linearVel.z;
+							ppLinVel.x += pushPullBehaviors[k].m_linearAcc.x * timeStep;
+							ppLinVel.y += pushPullBehaviors[k].m_linearAcc.y * timeStep;
+							ppLinVel.z += pushPullBehaviors[k].m_linearAcc.z * timeStep;
 
-							ppAngVel.x += pushPullBehaviors[k].m_angularVel.x;
-							ppAngVel.y += pushPullBehaviors[k].m_angularVel.y;
-							ppAngVel.z += pushPullBehaviors[k].m_angularVel.z;
+							ppAngVel.x += pushPullBehaviors[k].m_angularAcc.x * timeStep;
+							ppAngVel.y += pushPullBehaviors[k].m_angularAcc.y * timeStep;
+							ppAngVel.z += pushPullBehaviors[k].m_angularAcc.z;
 						}
 					}
 				}

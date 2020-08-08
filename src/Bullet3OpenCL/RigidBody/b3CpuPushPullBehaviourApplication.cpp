@@ -78,13 +78,13 @@ void b3CpuPushPullBehaviourApplication::applyPushPullBehaviours(struct b3RigidBo
 			if (++it == end)
 				break;
 
-			ppLinVel.x += m_pushPullBehaviors[it->second].m_linearVel.x;
-			ppLinVel.y += m_pushPullBehaviors[it->second].m_linearVel.y;
-			ppLinVel.z += m_pushPullBehaviors[it->second].m_linearVel.z;
+			ppLinVel.x += m_pushPullBehaviors[it->second].m_linearAcc.x;
+			ppLinVel.y += m_pushPullBehaviors[it->second].m_linearAcc.y;
+			ppLinVel.z += m_pushPullBehaviors[it->second].m_linearAcc.z;
 
-			ppAngVel.x += m_pushPullBehaviors[it->second].m_angularVel.x;
-			ppAngVel.y += m_pushPullBehaviors[it->second].m_angularVel.y;
-			ppAngVel.z += m_pushPullBehaviors[it->second].m_angularVel.z;
+			ppAngVel.x += m_pushPullBehaviors[it->second].m_angularAcc.x;
+			ppAngVel.y += m_pushPullBehaviors[it->second].m_angularAcc.y;
+			ppAngVel.z += m_pushPullBehaviors[it->second].m_angularAcc.z;
 
 		} while (it->first == key);
 

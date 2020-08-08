@@ -10,22 +10,23 @@ typedef struct b3RigidBodyPushPullBehavior b3RigidBodyPushPullBehavior_t;
 
 struct b3RigidBodyPushPullBehavior
 {
-public:
 	int m_bodyID;
 	int m_ghostObjectID;
 	b3Float4 m_bodyPosition;  // Should not be needed, but ConcaveScene demo operates with mesh offsets instead of actual origin transforms.
 	b3Quat m_bodyOrientation;
 	bool m_perContactPoint;
 
-	b3Float4 m_linearVel;
-	b3Float4 m_angularVel;
+	b3Float4 m_linearAcc;
+	b3Float4 m_angularAcc;
 
-	b3RigidBodyPushPullBehavior() : m_bodyID(-1), m_ghostObjectID(-1)
+	/*b3RigidBodyPushPullBehavior()
 	{
+		m_bodyID = -1;
+		m_ghostObjectID = -1;
 		m_bodyPosition = b3MakeFloat4(0, 0, 0, 0);
 		m_bodyOrientation = b3Quaternion(0, 0, 0, 1);
-		m_linearVel = b3MakeFloat4(0, 0, 0, 0);
-		m_angularVel = b3MakeFloat4(0, 0, 0, 0);
+		m_linearAcc = b3MakeFloat4(0, 0, 0, 0);
+		m_angularAcc = b3MakeFloat4(0, 0, 0, 0);
 		m_perContactPoint = false;
 	}
 
@@ -42,15 +43,15 @@ public:
 			m_bodyPosition.z = other.m_bodyPosition.z;
 			m_bodyPosition.w = other.m_bodyPosition.w;
 
-			m_linearVel.x = other.m_linearVel.x;
-			m_linearVel.y = other.m_linearVel.y;
-			m_linearVel.z = other.m_linearVel.z;
-			m_linearVel.w = other.m_linearVel.w;
+			m_linearAcc.x = other.m_linearAcc.x;
+			m_linearAcc.y = other.m_linearAcc.y;
+			m_linearAcc.z = other.m_linearAcc.z;
+			m_linearAcc.w = other.m_linearAcc.w;
 
-			m_angularVel.x = other.m_angularVel.x;
-			m_angularVel.y = other.m_angularVel.y;
-			m_angularVel.z = other.m_angularVel.z;
-			m_angularVel.w = other.m_angularVel.w;
+			m_angularAcc.x = other.m_angularAcc.x;
+			m_angularAcc.y = other.m_angularAcc.y;
+			m_angularAcc.z = other.m_angularAcc.z;
+			m_angularAcc.w = other.m_angularAcc.w;
 
 			m_bodyOrientation.x = other.m_bodyOrientation.x;
 			m_bodyOrientation.y = other.m_bodyOrientation.y;
@@ -72,15 +73,15 @@ public:
 			m_bodyPosition.z = other.m_bodyPosition.z;
 			m_bodyPosition.w = other.m_bodyPosition.w;
 
-			m_linearVel.x = other.m_linearVel.x;
-			m_linearVel.y = other.m_linearVel.y;
-			m_linearVel.z = other.m_linearVel.z;
-			m_linearVel.w = other.m_linearVel.w;
+			m_linearAcc.x = other.m_linearAcc.x;
+			m_linearAcc.y = other.m_linearAcc.y;
+			m_linearAcc.z = other.m_linearAcc.z;
+			m_linearAcc.w = other.m_linearAcc.w;
 
-			m_angularVel.x = other.m_angularVel.x;
-			m_angularVel.y = other.m_angularVel.y;
-			m_angularVel.z = other.m_angularVel.z;
-			m_angularVel.w = other.m_angularVel.w;
+			m_angularAcc.x = other.m_angularAcc.x;
+			m_angularAcc.y = other.m_angularAcc.y;
+			m_angularAcc.z = other.m_angularAcc.z;
+			m_angularAcc.w = other.m_angularAcc.w;
 
 			m_bodyOrientation.x = other.m_bodyOrientation.x;
 			m_bodyOrientation.y = other.m_bodyOrientation.y;
@@ -88,7 +89,7 @@ public:
 			m_bodyOrientation.w = other.m_bodyOrientation.w;
 		}
 		return *this;
-	}
+	}*/
 };
 
 typedef struct b3RigidBodyBehaviorVelocities b3RigidBodyBehaviorVelocities_t;

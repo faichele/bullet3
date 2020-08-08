@@ -33,7 +33,9 @@ public:
 													  m_mouseMoveMultiplier(0.4f),
 													  m_mouseXpos(0.f),
 													  m_mouseYpos(0.f),
-													  m_mouseInitialized(false)
+													  m_mouseInitialized(false),
+													  m_minCameraDistance(1.0f),
+													  m_maxCameraDistance(100.0f)
 	{
 		m_guiHelper = helper;
 		m_debugDrawer = new OpenCLDebugDrawer(m_guiHelper);
@@ -106,7 +108,7 @@ public:
 
 	virtual void resetCamera()
 	{
-		float dist = 500;
+		float dist = 50;
 		float pitch = -32;
 		float yaw = -45;
 		float targetPos[3] = {0.0, 0.0, 25.0};
