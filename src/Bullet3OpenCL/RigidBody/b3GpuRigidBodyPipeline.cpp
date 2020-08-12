@@ -49,7 +49,7 @@ bool gUseCalculateOverlappingPairsHost = false;
 bool gIntegrateOnCpu = false;
 bool gClearPairsOnGpu = true;
 
-bool gApplyPushPullBehavioursOnCpu = true;
+bool gApplyPushPullBehavioursOnCpu = false;
 
 #define TEST_OTHER_GPU_SOLVER 1
 #ifdef TEST_OTHER_GPU_SOLVER

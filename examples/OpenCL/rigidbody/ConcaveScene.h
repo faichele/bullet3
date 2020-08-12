@@ -63,8 +63,6 @@ public:
 	{
 		return m_dynamicsWorld;
 	}
-	// btRigidBody* m_carChassis;
-	// btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& worldTransform, btCollisionShape* colSape);
 
 	bool m_useDefaultCamera;
 	//----------------------------
