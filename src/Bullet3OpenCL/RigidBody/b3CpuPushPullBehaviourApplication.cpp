@@ -88,8 +88,8 @@ void b3CpuPushPullBehaviourApplication::applyPushPullBehaviours(struct b3RigidBo
 
 		} while (it->first == key);
 
-		pushPullVelocities[key].m_angularVel = ppAngVel;
-		pushPullVelocities[key].m_linearVel = ppLinVel;
+		pushPullVelocities[key].m_angularAcc = ppAngVel;
+		pushPullVelocities[key].m_linearAcc = ppLinVel;
 	}
 
 	for (int k = 0; k < numBodies; ++k)
@@ -110,7 +110,7 @@ void b3CpuPushPullBehaviourApplication::applyPushPullBehaviours(struct b3RigidBo
 				b3Float4 angvel = rigidBodies[k].m_angVel;
 
 				// Add angular velocity from push-pull behaviors
-				angvel += pushPullVelocities[k].m_angularVel;
+				angvel += pushPullVelocities[k].m_angularAcc * timeStep;
 
 				float fAngle = b3Sqrt(b3Dot3F4(angvel, angvel));
 
@@ -147,7 +147,7 @@ void b3CpuPushPullBehaviourApplication::applyPushPullBehaviours(struct b3RigidBo
 
 			// apply velocity from push-pull behaviors
 
-			rigidBodies[k].m_linVel += pushPullVelocities[k].m_linearVel * timeStep;
+			rigidBodies[k].m_linVel += pushPullVelocities[k].m_linearAcc * timeStep;
 
 			//linear velocity
 			rigidBodies[k].m_pos += rigidBodies[k].m_linVel * timeStep;

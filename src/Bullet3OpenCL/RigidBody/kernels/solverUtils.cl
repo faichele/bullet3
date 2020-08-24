@@ -383,6 +383,8 @@ typedef struct
 	Quaternion m_bodyOrientation;
 	int m_perContactPoint;
 
+	float4 m_linearVel;
+	float4 m_angularVel;
 	float4 m_linearAcc;
 	float4 m_angularAcc;
 } b3RigidBodyPushPullBehavior;
@@ -391,11 +393,15 @@ typedef struct
 
 typedef struct
 {
+	float4 m_linearVel;
+	float4 m_angularVel;
 	float4 m_linearAcc;
 	float4 m_angularAcc;
 
 	float4 m_linearVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
 	float4 m_angularVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
+	float4 m_linearAccPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
+	float4 m_angularAccPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
 } b3RigidBodyBehaviorVelocities;
 
 __kernel void CountBodiesKernel(__global struct b3Contact4Data* manifoldPtr, __global unsigned int* bodyCount, __global int2* contactConstraintOffsets, int numContactManifolds, int fixedBodyIndex)
@@ -531,16 +537,18 @@ void solveContact(__global Constraint4* cs,
 	int ppBehaviorId = -1;
 	for (int k = 0; k < numPushPullBehaviors; ++k)
 	{
-		if (bodyIdA == gPushPullBehaviors[k].m_bodyID)
+		if (invMassA) //(bodyIdA == gPushPullBehaviors[k].m_bodyID)
 		{
 			ppBodyId = bodyIdB;
-			ppLinAcc = ppLinAcc + gPushPullBehaviors[k].m_linAcc;
+			ppLinAcc = ppLinAcc + gPushPullBehaviors[k].m_linearAcc;
+			ppAngAcc = ppAngAcc + gPushPullBehaviors[k].m_angularAcc;
 		}
 		
-		if (bodyIdB == gPushPullBehaviors[k].m_bodyID)
+		if (invMassB) //(bodyIdB == gPushPullBehaviors[k].m_bodyID)
 		{
 			ppBodyId = bodyIdA;
-			ppLinAcc = ppLinAcc + gPushPullBehaviors[k].m_linAcc;
+			ppLinAcc = ppLinAcc + gPushPullBehaviors[k].m_linearAcc;
+			ppAngAcc = ppAngAcc + gPushPullBehaviors[k].m_angularAcc;
 		}
 	}
 
@@ -567,11 +575,6 @@ void solveContact(__global Constraint4* cs,
 			rambdaDt = updated - prevSum;
 			cs->m_appliedRambdaDt[ic] = updated;
 		}
-		
-		if (ppBodyId >= 0)
-		{
-			linear = linear + (ppLinAcc * rambdaDt);
-		}
 
 		float4 linImp0 = invMassA * linear * rambdaDt;
 		float4 linImp1 = invMassB * (-linear) * rambdaDt;
@@ -582,11 +585,23 @@ void solveContact(__global Constraint4* cs,
 		{
 			*dLinVelA += linImp0;
 			*dAngVelA += angImp0;
+			
+			if (ppBodyId >= 0)
+			{
+				gPushPullVelocities[ppBodyId].m_linearAcc = gPushPullVelocities[ppBodyId].m_linearAcc + linImp0;
+				gPushPullVelocities[ppBodyId].m_linearAcc = gPushPullVelocities[ppBodyId].m_linearAcc + angImp0;
+			}
 		}
 		if (invMassB)
 		{
 			*dLinVelB += linImp1;
 			*dAngVelB += angImp1;
+			
+			if (ppBodyId >= 0)
+			{
+				gPushPullVelocities[ppBodyId].m_linearAcc = gPushPullVelocities[ppBodyId].m_linearAcc + linImp1;
+				gPushPullVelocities[ppBodyId].m_linearAcc = gPushPullVelocities[ppBodyId].m_linearAcc + angImp1;
+			}
 		}
 	}
 }
@@ -670,7 +685,8 @@ __global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBe
 
 void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __global Constraint4* ldsCs,
 							__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
-							__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities)
+							__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
+							__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
 {
 	float frictionCoeff = 0.33f; //ldsCs[0].m_linear.w;
 	int aIdx = ldsCs[0].m_bodyA;
@@ -748,7 +764,7 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 			float4 r1 = center - posB;
 			for(int i=0; i<2; i++)
 			{
-				setLinearAndAngular( tangent[i], r0, r1, &linear, &angular0, &angular1 );
+				setLinearAndAngular(tangent[i], r0, r1, &linear, &angular0, &angular1);
 				float rambdaDt = calcRelVel(linear, -linear, angular0, angular1,
 											linVelA+dLinVelA, angVelA+dAngVelA, linVelB+dLinVelB, angVelB+dAngVelB );
 				rambdaDt *= cs->m_fJacCoeffInv[i];
@@ -803,18 +819,22 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 __kernel void SolveFrictionJacobiKernel(__global Constraint4* gConstraints, __global Body* gBodies, __global Shape* gShapes ,
 										__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
 										__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
-										float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds
+										float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds,
+										__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors
 )
 {
 	int i = GET_GLOBAL_IDX;
 	if (i<numManifolds)
 	{
-		solveFrictionConstraint( gBodies, gShapes, &gConstraints[i] ,&contactConstraintOffsets[i],offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities);
+		solveFrictionConstraint(gBodies, gShapes, &gConstraints[i] ,&contactConstraintOffsets[i],offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities,
+		gPushPullBehaviors, gPushPullVelocities, numPushPullBehaviors);
 	}
 }
 
 __kernel void UpdateBodyVelocitiesKernel(__global Body* gBodies,__global int* offsetSplitBodies,__global const unsigned int* bodyCount,
-									__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities, int numBodies)
+									__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities,
+									int numBodies
+									)
 {
 	int i = GET_GLOBAL_IDX;
 	if (i<numBodies)
@@ -826,16 +846,18 @@ __kernel void UpdateBodyVelocitiesKernel(__global Body* gBodies,__global int* of
 			if (count)
 			{
 				gBodies[i].m_linVel += deltaLinearVelocities[bodyOffset];
+				// gBodies[i].m_linVel += gPushPullVelocities[i].m_linearAcc;
 				gBodies[i].m_angVel += deltaAngularVelocities[bodyOffset];
+				// gBodies[i].m_angVel += gPushPullVelocities[i].m_angularAcc;
 			}
 		}
 	}
 }
 
-void setConstraint4( const float4 posA, const float4 linVelA, const float4 angVelA, float invMassA, const Matrix3x3 invInertiaA,
+void setConstraint4(const float4 posA, const float4 linVelA, const float4 angVelA, float invMassA, const Matrix3x3 invInertiaA,
 	const float4 posB, const float4 linVelB, const float4 angVelB, float invMassB, const Matrix3x3 invInertiaB, 
-	__global struct b3Contact4Data* src, float dt, float positionDrift, float positionConstraintCoeff,float countA, float countB,
-	Constraint4* dstC )
+	__global struct b3Contact4Data* src, float dt, float positionDrift, float positionConstraintCoeff, float countA, float countB,
+	Constraint4* dstC)
 {
 	dstC->m_bodyA = abs(src->m_bodyAPtrAndSignBit);
 	dstC->m_bodyB = abs(src->m_bodyBPtrAndSignBit);
@@ -955,9 +977,9 @@ float positionConstraintCoeff
 		float countA = invMassA != 0.f ? (float)bodyCount[aIdx] : 1;
 		float countB = invMassB != 0.f ? (float)bodyCount[bIdx] : 1;
 
-    	setConstraint4( posA, linVelA, angVelA, invMassA, invInertiaA, posB, linVelB, angVelB, invMassB, invInertiaB,
+    	setConstraint4(posA, linVelA, angVelA, invMassA, invInertiaA, posB, linVelB, angVelB, invMassB, invInertiaB,
 			&gContact[gIdx], dt, positionDrift, positionConstraintCoeff,countA,countB,
-			&cs  );
+			&cs);
 		
 		cs.m_batchIdx = gContact[gIdx].m_batchIdx;
 

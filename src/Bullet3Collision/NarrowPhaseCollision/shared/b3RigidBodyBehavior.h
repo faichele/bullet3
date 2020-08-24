@@ -96,8 +96,8 @@ typedef struct b3RigidBodyBehaviorVelocities b3RigidBodyBehaviorVelocities_t;
 
 struct b3RigidBodyBehaviorVelocities
 {
-	b3Float4 m_linearVel;
-	b3Float4 m_angularVel;
+	b3Float4 m_linearAcc;
+	b3Float4 m_angularAcc;
 
 	b3Float4 m_linearVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];
 	b3Float4 m_angularVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];

@@ -85,8 +85,8 @@ __kernel void applyPushPullImpulsesKernel(__global b3RigidBodyData_t* bodies, co
 			}
 
 			// Record the push-pull related velocity terms for debugging
-			pushPullVelocities[nodeID].m_linearVel = ppLinVel;
-			pushPullVelocities[nodeID].m_angularVel = ppAngVel;
+			pushPullVelocities[nodeID].m_linearAcc = ppLinVel;
+			pushPullVelocities[nodeID].m_angularAcc = ppAngVel;
 
 			// Correct order is acceleration -> velocity -> position...
 			//apply gravity

@@ -472,13 +472,13 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 				if (collisionFlagsCPU[bodyIdxA] & b3CollisionFlags::CF_GHOST_OBJECT)
 				{
 					ghostContact = true;
-					printf("Body A (%i) is a ghost object\n", bodyIdxA);
+					// printf("Body A (%i) is a ghost object\n", bodyIdxA);
 				}
 
 				if (collisionFlagsCPU[bodyIdxB] & b3CollisionFlags::CF_GHOST_OBJECT)
 				{
 					ghostContact = true;
-					printf("Body B (%i) is a ghost object\n", bodyIdxB);
+					// printf("Body B (%i) is a ghost object\n", bodyIdxB);
 				}
 
 				if (!ghostContact)
@@ -542,7 +542,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 			bool useGpu = true;
 			if (useGpu)
 			{
-				bool forceHost = false;
+				bool forceHost = true;
 				if (forceHost)
 				{
 					b3AlignedObjectArray<b3RigidBodyData> hostBodies;
