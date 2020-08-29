@@ -560,7 +560,8 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 
 					{
 						b3JacobiSolverInfo solverInfo;
-						m_data->m_solver3->solveGroupHost(&hostBodies[0], &hostInertias[0], hostBodies.size(), &hostContacts[0], hostContacts.size(), solverInfo);
+						m_data->m_solver3->solveGroupHost(&hostBodies[0], &hostInertias[0], hostBodies.size(), &hostContacts[0], hostContacts.size(), solverInfo,
+							m_data->m_bodiesPushPullBehaviorsCPU, m_data->m_bodiesPushPullVelocitiesCPU);
 					}
 					{
 						B3_PROFILE("copyFromHost");
@@ -908,8 +909,8 @@ void b3GpuRigidBodyPipeline::setPhysicsInstancePushPullBehavior(int instanceInde
 	{
 		b3RigidBodyPushPullBehavior ppBehavior;
 		ppBehavior.m_bodyID = instanceIndex;
-		ppBehavior.m_linearAcc = b3MakeFloat4(translationalVelocity[0], translationalVelocity[1], translationalVelocity[2]);
-		ppBehavior.m_angularAcc = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
+		ppBehavior.m_linearVel = b3MakeFloat4(translationalVelocity[0], translationalVelocity[1], translationalVelocity[2]);
+		ppBehavior.m_angularVel = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
 
 		ppBehavior.m_bodyPosition = b3MakeFloat4(anchorPoint[0], anchorPoint[1], anchorPoint[2]);
 		ppBehavior.m_bodyOrientation = b3Quaternion(anchorOrientation[0], anchorOrientation[1], anchorOrientation[2], anchorOrientation[3]);
@@ -919,8 +920,8 @@ void b3GpuRigidBodyPipeline::setPhysicsInstancePushPullBehavior(int instanceInde
 	}
 	else
 	{
-		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_linearAcc = b3MakeFloat4(translationalVelocity[0], translationalVelocity[1], translationalVelocity[2]);
-		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_angularAcc = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
+		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_linearVel = b3MakeFloat4(translationalVelocity[0], translationalVelocity[1], translationalVelocity[2]);
+		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_angularVel = b3MakeFloat4(rotationalVelocity[0], rotationalVelocity[1], rotationalVelocity[2]);
 		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_bodyPosition = b3MakeFloat4(anchorPoint[0], anchorPoint[1], anchorPoint[2]);
 		m_data->m_bodiesPushPullBehaviorsCPU[behaviorIndex].m_bodyOrientation = b3Quaternion(anchorOrientation[0], anchorOrientation[1], anchorOrientation[2], anchorOrientation[3]);
 	

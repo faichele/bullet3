@@ -480,7 +480,8 @@ void ContactToConstraintKernel(b3Contact4* gContact, b3RigidBodyData* gBodies, b
 	}
 }
 
-void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo)
+void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo,
+											  b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
 {
 	B3_PROFILE("b3GpuJacobiContactSolver::solveGroup");
 
@@ -492,6 +493,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	b3AlignedObjectArray<b3Int2> contactConstraintOffsets;
 	contactConstraintOffsets.resize(numManifolds);
 
+	std::cout << "Computing contactConstraintOffsets and bodyCount's..." << std::endl;
 	for (int i = 0; i < numManifolds; i++)
 	{
 		int pa = manifoldPtr[i].m_bodyAPtrAndSignBit;
@@ -515,6 +517,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 		}
 	}
 
+	std::cout << "Computing offsetSplitBodies..." << std::endl;
 	b3AlignedObjectArray<unsigned int> offsetSplitBodies;
 	offsetSplitBodies.resize(numBodies);
 	unsigned int totalNumSplitBodies;
@@ -526,6 +529,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	b3AlignedObjectArray<b3GpuConstraint4> contactConstraints;
 	contactConstraints.resize(numManifolds);
 
+	std::cout << "ContactToConstraintKernel for " << numManifolds << "contact manifolds..." << std::endl;
 	for (int i = 0; i < numManifolds; i++)
 	{
 		ContactToConstraintKernel(&manifoldPtr[0], bodies, inertias, &contactConstraints[0], numManifolds,
@@ -547,9 +551,11 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 		deltaAngularVelocities[i].setZero();
 	}
 
+	std::cout << "Solver iterations: " << maxIter << std::endl;
 	for (int iter = 0; iter < maxIter; iter++)
 	{
 		int i = 0;
+		std::cout << "solveContacts " << iter << std::endl;
 		for (i = 0; i < numManifolds; i++)
 		{
 			//float frictionCoeff = contactConstraints[i].getFrictionCoeff();
@@ -594,6 +600,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 		}
 
 		//easy
+		std::cout << "averageVelocities 1 " << iter << std::endl;
 		for (int i = 0; i < numBodies; i++)
 		{
 			if (bodies[i].m_invMass)
@@ -623,7 +630,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 		//int i=0;
 
 		//solve friction
-
+		std::cout << "solveFriction " << iter << std::endl;
 		for (int i = 0; i < numManifolds; i++)
 		{
 			float maxRambdaDt[4] = {FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX};
@@ -677,6 +684,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 		}
 
 		//easy
+		std::cout << "averageVelocities 2 " << iter << std::endl;
 		for (int i = 0; i < numBodies; i++)
 		{
 			if (bodies[i].m_invMass)
@@ -893,7 +901,7 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 	std::cout << "ppVelocitiesPerContact size: " << ppVelocitiesPerContact.size() << std::endl;
 	for (int k = 0; k < ppVelocitiesPerContact.size(); ++k)
 	{
-		std::cout << " - " << k << ": linear = (" << ppVelocitiesPerContact[k].m_linearAcc.x << ", " << ppVelocitiesPerContact[k].m_linearAcc.y << ", " << ppVelocitiesPerContact[k].m_linearAcc.z << ")" << std::endl;
+		std::cout << " - " << k << ": linear = (" << ppVelocitiesPerContact[k].m_linearVel.x << ", " << ppVelocitiesPerContact[k].m_linearVel.y << ", " << ppVelocitiesPerContact[k].m_linearVel.z << ")" << std::endl;
 	}
 
 	{
@@ -905,7 +913,7 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 		launcher.setBuffer(m_data->m_deltaLinearVelocities->getBufferCL());
 		launcher.setBuffer(m_data->m_deltaAngularVelocities->getBufferCL());
 
-		std::cout << "numBodies = " << numBodies << ", ppVelocitiesPerContact.size() = " << ppVelocitiesPerContact.size() << std::endl; 
+		std::cout << "numBodies = " << numBodies << ", ppVelocitiesPerContact.size() = " << ppVelocitiesPerContact.size() << std::endl;
 		std::cout << "=====================================================================" << std::endl;
 		launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
 		launcher.setConst(numBodies);
