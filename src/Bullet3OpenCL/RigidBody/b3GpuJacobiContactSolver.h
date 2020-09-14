@@ -4,10 +4,16 @@
 #include "Bullet3OpenCL/Initialize/b3OpenCLInclude.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 
+#include "Bullet3Common/shared/b3Int2.h"
+#include "Bullet3OpenCL/RigidBody/b3GpuConstraint4.h"
+
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3Contact4Data.h"
 #include "Bullet3OpenCL/ParallelPrimitives/b3OpenCLArray.h"
 
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
+
+#include <vector>
+#include <map>
 
 class b3TypedConstraint;
 
@@ -44,15 +50,18 @@ public:
 
 	void setPushPullBehaviorData(const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>&, const b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>&);
 
-	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index, 
-		b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
-	void solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, struct b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo,
-						b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
-	//void  solveGroupHost(btRigidBodyCL* bodies,b3InertiaData* inertias,int numBodies,btContact4* manifoldPtr, int numManifolds,btTypedConstraint** constraints,int numConstraints,const btJacobiSolverInfo& solverInfo);
+	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
+					   int numPushPullBehaviors, cl_mem pushPullBehavioursBuf, cl_mem pushPullVelocitiesBuf);
+	void solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, struct b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo, 
+		b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities, const std::map<int, std::vector<int>>& ppMap);
 
-	//b3Scalar solveGroup(b3OpenCLArray<b3RigidBodyData>* gpuBodies,b3OpenCLArray<b3InertiaData>* gpuInertias, int numBodies,b3OpenCLArray<b3GpuGenericConstraint>* gpuConstraints,int numConstraints,const b3ContactSolverInfo& infoGlobal);
-
-	//void  solveGroup(btOpenCLArray<btRigidBodyCL>* bodies,btOpenCLArray<btInertiaCL>* inertias,btOpenCLArray<btContact4>* manifoldPtr,const btJacobiSolverInfo& solverInfo);
-	//void  solveGroupMixed(btOpenCLArray<btRigidBodyCL>* bodies,btOpenCLArray<btInertiaCL>* inertias,btOpenCLArray<btContact4>* manifoldPtr,const btJacobiSolverInfo& solverInfo);
+	b3AlignedObjectArray<b3Int2>& getContactConstraintOffsetsCPU();
+	b3AlignedObjectArray<b3GpuConstraint4>& getContactConstraintsCPU();
+	b3AlignedObjectArray<b3Vector3>& getDeltaLinearVelocitiesCPU();
+	b3AlignedObjectArray<b3Vector3>& getDeltaAngularVelocitiesCPU();
+	b3AlignedObjectArray<unsigned int>& getBodyCountCPU();
+	unsigned int getNumHostContactManifolds() const;
+	unsigned int getTotalNumSplitBodiesCPU();
+	b3AlignedObjectArray<unsigned int>& getOffsetSplitBodiesCPU();
 };
 #endif  //B3_GPU_JACOBI_CONTACT_SOLVER_H

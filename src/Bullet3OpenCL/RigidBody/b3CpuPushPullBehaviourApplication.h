@@ -6,20 +6,29 @@
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
 
-class b3CpuPushPullBehaviourApplication
+#include <vector>
+#include <map>
+
+class b3PushPullBehaviourApplication
 {
 	public:
-		b3CpuPushPullBehaviourApplication();
+		b3PushPullBehaviourApplication();
 
 		void registerPushPullBehavior(const b3RigidBodyPushPullBehavior&);
 		void unregisterPushPullBehavior(const b3RigidBodyPushPullBehavior&);
 
-		void applyPushPullBehaviours(struct b3RigidBodyData* rigidBodies,
-									 unsigned int numBodies, float timeStep, float angularDamp,
-									 const b3Vector3& gravity,
-									 const b3AlignedObjectArray<b3BroadphasePair>& overlappingPairsCPU,
-									 const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors,
-									 b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
+		void findPushPullContacts(struct b3RigidBodyData* rigidBodies,
+								  unsigned int numBodies, float timeStep, 
+								  const b3AlignedObjectArray<b3BroadphasePair>& overlappingPairsCPU,
+								  b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
+
+		void applyPushPullBehavioursCPU(struct b3RigidBodyData* rigidBodies,
+										unsigned int numBodies, float timeStep, 
+										const b3AlignedObjectArray<b3BroadphasePair>& overlappingPairsCPU,
+										const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors,
+										b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
+
+		const std::map<int, std::vector<int>>& getRigidBodyToPushPullMap() const;
 
 	private:
 		b3AlignedObjectArray<int> m_registeredPushPullBodies;
@@ -28,6 +37,7 @@ class b3CpuPushPullBehaviourApplication
 		b3AlignedObjectArray<b3RigidBodyPushPullBehavior> m_pushPullBehaviors;
 		b3AlignedObjectArray<b3RigidBodyBehaviorVelocities> m_hostPushPullVelocities;
 
+		std::map<int, std::vector<int>> m_rbToPPBehaviorMap;
 };
 
 #endif

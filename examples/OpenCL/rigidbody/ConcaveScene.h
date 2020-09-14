@@ -115,7 +115,7 @@ public:
 
 	void setupScene();
 
-	virtual void createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX = 100, unsigned int arraySizeY = 50, unsigned int arraySizeZ = 5, bool useInstancedCollisionShapes = true, float scale = 1.0f);
+	virtual void createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX = 100, unsigned int arraySizeY = 50, unsigned int arraySizeZ = 5, float objectDistanceX = 0.5, float objectDistanceY = 0.5, float objectDistanceZ = 0.5, bool useInstancedCollisionShapes = true, float scale = 1.0f);
 
 	virtual bool createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject = false, float mass = 0.0f, int collisionMask = 0);
 };

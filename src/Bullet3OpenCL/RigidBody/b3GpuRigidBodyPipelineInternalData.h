@@ -43,7 +43,7 @@ struct b3GpuRigidBodyPipelineInternalData
 	cl_kernel m_clearOverlappingPairsKernel;
 	
 	cl_kernel m_markGhostObjectPairsKernel;
-	cl_kernel m_applyPushPullImpulsesKernel;
+	// cl_kernel m_applyPushPullImpulsesKernel;
 
 	class b3PgsJacobiSolver* m_solver;
 
@@ -52,6 +52,9 @@ struct b3GpuRigidBodyPipelineInternalData
 	class b3GpuPgsContactSolver* m_solver2;
 	class b3GpuJacobiContactSolver* m_solver3;
 	class b3GpuRaycast* m_raycaster;
+
+	b3AlignedObjectArray<b3RigidBodyData> m_hostBodies;
+	b3AlignedObjectArray<b3InertiaData> m_hostInertias;
 
 	class b3GpuBroadphaseInterface* m_broadphaseSap;
 
@@ -70,10 +73,12 @@ struct b3GpuRigidBodyPipelineInternalData
 	b3OpenCLArray<b3RigidBodyBehaviorVelocities>* m_bodiesPushPullVelocitiesGPU;
 	b3AlignedObjectArray<b3RigidBodyBehaviorVelocities> m_bodiesPushPullVelocitiesCPU;
 
-	b3CpuPushPullBehaviourApplication* m_pushPullBehaviorApplicationCPU;
+	b3PushPullBehaviourApplication* m_pushPullBehaviorApplicationCPU;
 
 	// Host-side copy of overlapping pairs detected by the broadphase
 	b3AlignedObjectArray<b3BroadphasePair> m_overlappingPairsCPU;
+
+	b3AlignedObjectArray<b3Contact4> m_hostContacts;
 	
 	b3OpenCLArray<b3GpuGenericConstraint>* m_gpuConstraints;
 	b3AlignedObjectArray<b3GpuGenericConstraint> m_cpuConstraints;

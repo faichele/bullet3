@@ -22,6 +22,8 @@
 
 #include "OpenGLWindow/GLInstanceGraphicsShape.h"
 
+#include "Bullet3OpenCL/RigidBody/b3GpuJacobiContactSolver.h"
+
 #include <iostream>
 
 #define CONCAVE_GAPX 5
@@ -261,6 +263,13 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 	btVector3 defaultContactColor(0.8, 0.4, 0.4);
 	btVector3 ghostContactColor(0.4, 0.8, 0.4);
 
+	btVector3 contactManifoldColorA1(0.4, 0.8, 0.9);
+	btVector3 contactManifoldColorA2(0.9, 0.5, 0.5);
+	btVector3 contactManifoldColorA3(0.0, 0.0, 0.9);
+	btVector3 contactManifoldColorB1(0.9, 0.8, 0.4);
+	btVector3 contactManifoldColorB2(0.5, 0.9, 0.9);
+	btVector3 contactManifoldColorB3(0.9, 0.0, 0.0);
+
 	btVector3 triangleColor(0.2, 0.8, 0.2);
 	btVector3 ghostObjectColor(0.8, 0.8, 0.2);
 	btVector3 pushPullColor(0.2, 0.8, 0.8);
@@ -367,6 +376,123 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 			}
 		}
 	}
+
+	b3GpuJacobiContactSolver* jacobiCs = m_data->m_rigidBodyPipeline->getSolver3();
+	if (jacobiCs)
+	{
+		b3AlignedObjectArray<b3RigidBodyData>& bodies = m_data->m_rigidBodyPipeline->getBodies();
+
+		unsigned int numContactManifolds = jacobiCs->getNumHostContactManifolds();
+		b3AlignedObjectArray<b3Vector3>& linVelDeltas = jacobiCs->getDeltaLinearVelocitiesCPU();
+		b3AlignedObjectArray<b3Vector3>& angVelDeltas = jacobiCs->getDeltaAngularVelocitiesCPU();
+		b3AlignedObjectArray<b3Int2>& constraintOffsets = jacobiCs->getContactConstraintOffsetsCPU();
+		b3AlignedObjectArray<unsigned int>& offsetSplitBodies = jacobiCs->getOffsetSplitBodiesCPU();
+		b3AlignedObjectArray<b3GpuConstraint4>& contactConstraints = jacobiCs->getContactConstraintsCPU();
+		b3AlignedObjectArray<b3Contact4>& contactManifolds = m_data->m_rigidBodyPipeline->getHostContacts();
+		std::cout << "DebugDraw contact manifolds: " << numContactManifolds << std::endl;
+
+		for (int k = 0; k < numContactManifolds; ++k)
+		{
+			int aIdx = (int)contactConstraints[k].m_bodyA;
+			int bIdx = (int)contactConstraints[k].m_bodyB;
+			b3RigidBodyData& bodyA = bodies[aIdx];
+			b3RigidBodyData& bodyB = bodies[bIdx];
+
+			btVector3 dlvA;
+			btVector3 davA;
+			btVector3 dlvB;
+			btVector3 davB;
+
+			bool drawContactsForBodyA = false;
+			bool drawContactsForBodyB = false;
+			if (bodyA.m_invMass)
+			{
+				int bodyOffsetA = offsetSplitBodies[aIdx];
+				int constraintOffsetA = constraintOffsets[k].x;
+				int splitIndexA = bodyOffsetA + constraintOffsetA;
+				dlvA = btVector3(linVelDeltas[splitIndexA].x, linVelDeltas[splitIndexA].y, linVelDeltas[splitIndexA].z);
+				davA = btVector3(angVelDeltas[splitIndexA].x, angVelDeltas[splitIndexA].y, angVelDeltas[splitIndexA].z);
+				drawContactsForBodyA = true;
+			}
+
+			if (bodyB.m_invMass)
+			{
+				int bodyOffsetB = offsetSplitBodies[bIdx];
+				int constraintOffsetB = constraintOffsets[k].y;
+				int splitIndexB = bodyOffsetB + constraintOffsetB;
+				dlvB = btVector3(linVelDeltas[splitIndexB].x, linVelDeltas[splitIndexB].y, linVelDeltas[splitIndexB].z);
+				davB = btVector3(angVelDeltas[splitIndexB].x, angVelDeltas[splitIndexB].y, angVelDeltas[splitIndexB].z);
+				drawContactsForBodyB = true;
+			}
+
+			if (drawContactsForBodyA)
+			{
+				btVector3 contactPosA(contactConstraints[k].m_worldPos[4].x, contactConstraints[k].m_worldPos[4].y, contactConstraints[k].m_worldPos[4].z);
+				btVector3 manifoldCenterA(contactConstraints[k].m_center.x, contactConstraints[k].m_center.y, contactConstraints[k].m_center.z);
+
+				std::cout << "Manifold " << k << " bodyA (" << contactConstraints[k].m_bodyA << "): contactPos = (" << contactPosA.x() << ", " << contactPosA.y() << ", " << contactPosA.z() << ")" << std::endl
+						  << "manifoldCenter = (" << manifoldCenterA.x() << ", " << manifoldCenterA.y() << ", " << manifoldCenterA.z() << ")" << std::endl
+						  << "dLinVel = (" << dlvA.x() << ", " << dlvA.y() << ", " << dlvA.z() << ")" << std::endl
+						  << "dAngVel = (" << davA.x() << ", " << davA.y() << ", " << davA.z() << ")"
+						  << std::endl;
+
+				std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl;
+				for (int m = 0; m < contactManifolds[k].getNPoints() - 1; ++m)
+				{
+					btVector3 pt1(contactManifolds[k].m_worldPosB[m].x, contactManifolds[k].m_worldPosB[m].y, contactManifolds[k].m_worldPosB[m].z);
+					btVector3 pt2(contactManifolds[k].m_worldPosB[m + 1].x, contactManifolds[k].m_worldPosB[m + 1].y, contactManifolds[k].m_worldPosB[m + 1].z);
+
+					if (m % 2 == 0)
+						m_debugDrawer->drawLine(pt1, pt2, contactManifoldColorA1);
+					else
+						m_debugDrawer->drawLine(pt1, pt2, contactManifoldColorA2);
+				}
+
+				btVector3 pt1(contactManifolds[k].m_worldPosB[contactManifolds[k].getNPoints() - 1].x, contactManifolds[k].m_worldPosB[contactManifolds[k].getNPoints() - 1].y, contactManifolds[k].m_worldPosB[contactManifolds[k].getNPoints() - 1].z);
+				btVector3 pt2(contactManifolds[k].m_worldPosB[0].x, contactManifolds[k].m_worldPosB[0].y, contactManifolds[k].m_worldPosB[0].z);
+				m_debugDrawer->drawLine(pt1, pt2, contactManifoldColorA2);
+
+				m_debugDrawer->drawSphere(contactPosA, 0.02f, contactManifoldColorA1);
+				m_debugDrawer->drawSphere(manifoldCenterA, 0.02f, contactManifoldColorA2);
+
+				m_debugDrawer->drawLine(contactPosA, contactPosA + dlvA, contactManifoldColorA1);
+			}
+
+			if (drawContactsForBodyB)
+			{
+				btVector3 contactPosB(contactConstraints[k].m_worldPos[4].x, contactConstraints[k].m_worldPos[4].y, contactConstraints[k].m_worldPos[4].z);
+				btVector3 manifoldCenterB(contactConstraints[k].m_center.x, contactConstraints[k].m_center.y, contactConstraints[k].m_center.z);
+
+				std::cout << "Manifold " << k << " bodyB (" << contactConstraints[k].m_bodyB << "): contactPos = (" << contactPosB.x() << ", " << contactPosB.y() << ", " << contactPosB.z() << ")" << std::endl
+						  << "manifoldCenter = (" << manifoldCenterB.x() << ", " << manifoldCenterB.y() << ", " << manifoldCenterB.z() << ")" << std::endl
+						  << "dLinVel = (" << dlvB.x() << ", " << dlvB.y() << ", " << dlvB.z() << ")" << std::endl
+						  << "dAngVel = (" << davB.x() << ", " << davB.y() << ", " << davB.z() << ")"
+						  << std::endl;
+
+				std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl;
+				for (int m = 0; m < contactManifolds[k].getNPoints() - 1; ++m)
+				{
+					btVector3 pt1(contactManifolds[k].m_worldPosB[m].x, contactManifolds[k].m_worldPosB[m].y, contactManifolds[k].m_worldPosB[m].z);
+					btVector3 pt2(contactManifolds[k].m_worldPosB[m + 1].x, contactManifolds[k].m_worldPosB[m + 1].y, contactManifolds[k].m_worldPosB[m + 1].z);
+
+					if (m % 2 == 0)
+						m_debugDrawer->drawLine(pt1, pt2, contactManifoldColorB1);
+					else
+						m_debugDrawer->drawLine(pt1, pt2, contactManifoldColorB2);
+				}
+
+				btVector3 pt1(contactManifolds[k].m_worldPosB[contactManifolds[k].getNPoints() - 1].x, contactManifolds[k].m_worldPosB[contactManifolds[k].getNPoints() - 1].y, contactManifolds[k].m_worldPosB[contactManifolds[k].getNPoints() - 1].z);
+				btVector3 pt2(contactManifolds[k].m_worldPosB[0].x, contactManifolds[k].m_worldPosB[0].y, contactManifolds[k].m_worldPosB[0].z);
+				m_debugDrawer->drawLine(pt1, pt2, contactManifoldColorB2);
+
+				m_debugDrawer->drawSphere(contactPosB, 0.02f, contactManifoldColorB1);
+				m_debugDrawer->drawSphere(manifoldCenterB, 0.02f, contactManifoldColorB2);
+
+				m_debugDrawer->drawLine(contactPosB, contactPosB + dlvB, contactManifoldColorB3);
+			}
+		}
+	}
+
 	m_debugDrawer->drawDebugDrawerLines();
 }
 
@@ -380,12 +506,47 @@ void ConcaveScene::exitPhysics()
 	GpuRigidBodyDemo::exitPhysics();
 }
 
+#define CONCAVE_SCENE_SINGLE_CUBE_TEST
+//#define CONCAVE_SCENE_CONVEYOR_TEST_SMALL
+//#define CONCAVE_SCENE_CONVEYOR_TEST_LARGE
+
 void ConcaveScene::setupScene()
 {
 	const char* fileName = "cube.obj";  //"samurai_monastry.obj";
 
 	int graphicsId = -1, physicsId = -1;
 
+#ifdef CONCAVE_SCENE_SINGLE_CUBE_TEST
+	b3Mat3x3 tmp;
+	tmp.setEulerZYX(0, 0, 0);
+	b3Quaternion orientation_plane;
+	tmp.getRotation(orientation_plane);
+	b3Vector3 position_plane = b3MakeVector3(0, -1, 0);
+	b3Vector4 scaling_plane = b3MakeVector4(250, 5, 250, 1);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane);
+
+	// TODO: Fix application of gravity when NO ghost object is present in the simulation!
+	b3Vector3 position_plane_ghost = b3MakeVector3(0, -0.5, 0);
+	if (createConcaveMesh(graphicsId, physicsId, fileName, position_plane_ghost, orientation_plane, scaling_plane, true, 0.0f, 1))
+	{
+		b3Vector3 trVel1 = b3MakeVector3(0, 0, -1.0);
+		b3Vector3 rotVel1 = b3MakeVector3(0, 1.0, 0);
+
+		b3Vector3 trAcc1 = b3MakeVector3(0, 0, -1.0);
+		b3Vector3 rotAcc1 = b3MakeVector3(0, 1.0, 0);
+
+		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, trAcc1, rotAcc1, position_plane, orientation_plane, true);
+		m_ghostObjectColIndices.push_back(physicsId);
+	}
+
+	b3Vector3 objects_origin = b3MakeVector3(0, 0, 1);
+	float cube_scale = 0.75f;
+	createDynamicObjects(objects_origin, 8, 2, 1, cube_scale * 4.0f, cube_scale * 4.0f, cube_scale * 4.0f, true, cube_scale);
+
+	std::cout << "Created dynamic objects." << std::endl;
+#endif
+
+#ifdef CONCAVE_SCENE_CONVEYOR_TEST_SMALL
 	b3Mat3x3 tmp;
 	tmp.setEulerZYX(0, 0, 0);
 	b3Quaternion orientation_plane;
@@ -453,6 +614,7 @@ void ConcaveScene::setupScene()
 	// Y = up
 	b3Vector3 objects_origin = b3MakeVector3(10, 40, 30);
 	createDynamicObjects(objects_origin, 1, 1, 10, true, 0.75f);
+#endif
 
 	m_data->m_rigidBodyPipeline->writeAllInstancesToGpu();
 
@@ -585,7 +747,7 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 	return false;
 }
 
-void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX, unsigned int arraySizeY, unsigned int arraySizeZ, bool useInstancedCollisionShapes, float scale)
+void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX, unsigned int arraySizeY, unsigned int arraySizeZ, float objectDistanceX, float objectDistanceY, float objectDistanceZ, bool useInstancedCollisionShapes, float scale)
 {
 	int strideInBytes = 9 * sizeof(float);
 	int numVertices = sizeof(cube_vertices) / strideInBytes;
@@ -637,21 +799,41 @@ void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigne
 
 	float mass = 1;
 
-	for (int k = 0; k < 10; ++k)
+	/*for (int k = 0; k < 10; ++k)
+	{*/
+	std::cout << "Creating dynamic objects: " << (arraySizeX * arraySizeY * arraySizeZ) << std::endl;
+	for (int i = 0; i < arraySizeX; i++)
 	{
-		b3Vector3 position = b3MakeVector3(objects_origin.x,
-										   objects_origin.y,
-										   objects_origin.z - k * 3);
-		b3Quaternion orn(0, 0, 0, 1);
+		std::cout << "Row X-dir: " << i << std::endl;
+		for (int j = 0; j < arraySizeY; j++)
+		{
+			std::cout << "Row Y-dir: " << j << std::endl;
+			for (int k = 0; k < arraySizeZ; k++)
+			{
+				std::cout << "Row Z-dir: " << k << std::endl;
 
-		b3Vector4 color = colors[curColor];
-		curColor++;
-		curColor &= 3;
+				/*b3Vector3 position = b3MakeVector3(objects_origin.x,
+												   objects_origin.y,
+												   objects_origin.z - k * 3);*/
 
-		int id = m_instancingRenderer->registerGraphicsInstance(shapeId, position, orn, color, scaling);
-		int pid = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false);
+				b3Vector3 position = b3MakeVector3(objects_origin.x + (i * objectDistanceX),
+												   objects_origin.y + (j * objectDistanceY),
+												   objects_origin.z + (k * objectDistanceZ));
 
-		index++;
+				std::cout << "Object " << (i + j + k) << " position: (" << position.x << "," << position.y << "," << position.z << ")" << std::endl;
+
+				b3Quaternion orn(0, 0, 0, 1);
+
+				b3Vector4 color = colors[curColor];
+				curColor++;
+				curColor &= 3;
+
+				int id = m_instancingRenderer->registerGraphicsInstance(shapeId, position, orn, color, scaling);
+				int pid = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false);
+
+				index++;
+			}
+		}
 	}
 	/*for (int i = 0; i < arraySizeX; i++)
 	{

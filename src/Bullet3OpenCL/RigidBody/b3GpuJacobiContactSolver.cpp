@@ -17,6 +17,13 @@ class b3Vector3;
 
 struct b3GpuJacobiSolverInternalData
 {
+	b3GpuJacobiSolverInternalData()
+	{
+		m_numHostContacts = 0;
+		m_totalNumSplitBodiesCPU = 0;
+		m_scan = nullptr;
+		m_filler = nullptr;
+	}
 	//btRadixSort32CL*	m_sort32;
 	//btBoundSearchCL*	m_search;
 	b3PrefixScanCL* m_scan;
@@ -28,10 +35,18 @@ struct b3GpuJacobiSolverInternalData
 	b3OpenCLArray<b3Vector3>* m_deltaLinearVelocities;
 	b3OpenCLArray<b3Vector3>* m_deltaAngularVelocities;
 
+	b3OpenCLArray<b3GpuConstraint4>* m_contactConstraints;
+
+	b3AlignedObjectArray<b3GpuConstraint4> m_contactConstraintsCPU;
+	b3AlignedObjectArray<b3Int2> m_contactConstraintOffsetsCPU;
 	b3AlignedObjectArray<b3Vector3> m_deltaLinearVelocitiesCPU;
 	b3AlignedObjectArray<b3Vector3> m_deltaAngularVelocitiesCPU;
+	b3AlignedObjectArray<unsigned int> m_bodyCountCPU;
 
-	b3OpenCLArray<b3GpuConstraint4>* m_contactConstraints;
+	unsigned int m_totalNumSplitBodiesCPU;
+	b3AlignedObjectArray<unsigned int> m_offsetSplitBodiesCPU;
+
+	unsigned int m_numHostContacts;
 
 	// Push-pull behavior data (local copy)
 	b3OpenCLArray<b3RigidBodyPushPullBehavior>* m_pushPullBehaviors;
@@ -129,6 +144,46 @@ void b3GpuJacobiContactSolver::setPushPullBehaviorData(const b3AlignedObjectArra
 	m_data->m_pushPullVelocities->copyFromHost(ppVelocities);
 }
 
+b3AlignedObjectArray<b3GpuConstraint4>& b3GpuJacobiContactSolver::getContactConstraintsCPU()
+{
+	return m_data->m_contactConstraintsCPU;
+}
+
+b3AlignedObjectArray<b3Int2>& b3GpuJacobiContactSolver::getContactConstraintOffsetsCPU()
+{
+	return m_data->m_contactConstraintOffsetsCPU;
+}
+
+b3AlignedObjectArray<b3Vector3>& b3GpuJacobiContactSolver::getDeltaLinearVelocitiesCPU()
+{
+	return m_data->m_deltaLinearVelocitiesCPU;
+}
+
+b3AlignedObjectArray<b3Vector3>& b3GpuJacobiContactSolver::getDeltaAngularVelocitiesCPU()
+{
+	return m_data->m_deltaAngularVelocitiesCPU;
+}
+
+b3AlignedObjectArray<unsigned int>& b3GpuJacobiContactSolver::getBodyCountCPU()
+{
+	return m_data->m_bodyCountCPU;
+}
+
+unsigned int b3GpuJacobiContactSolver::getTotalNumSplitBodiesCPU()
+{
+	return m_data->m_totalNumSplitBodiesCPU;
+}
+
+b3AlignedObjectArray<unsigned int>& b3GpuJacobiContactSolver::getOffsetSplitBodiesCPU()
+{
+	return m_data->m_offsetSplitBodiesCPU;
+}
+
+unsigned int b3GpuJacobiContactSolver::getNumHostContactManifolds() const
+{
+	return m_data->m_numHostContacts;
+}
+
 b3Vector3 make_float4(float v)
 {
 	return b3MakeVector3(v, v, v);
@@ -156,7 +211,9 @@ static inline void setLinearAndAngular(const b3Vector3& n, const b3Vector3& r0, 
 static __inline void solveContact(b3GpuConstraint4& cs,
 								  const b3Vector3& posA, const b3Vector3& linVelARO, const b3Vector3& angVelARO, float invMassA, const b3Matrix3x3& invInertiaA,
 								  const b3Vector3& posB, const b3Vector3& linVelBRO, const b3Vector3& angVelBRO, float invMassB, const b3Matrix3x3& invInertiaB,
-								  float maxRambdaDt[4], float minRambdaDt[4], b3Vector3& dLinVelA, b3Vector3& dAngVelA, b3Vector3& dLinVelB, b3Vector3& dAngVelB)
+								  float maxRambdaDt[4], float minRambdaDt[4], b3Vector3& dLinVelA, b3Vector3& dAngVelA, b3Vector3& dLinVelB, b3Vector3& dAngVelB,
+								  int constraintIdx, b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities,
+								  const std::map<int, std::vector<int>>& ppMap)
 {
 	for (int ic = 0; ic < 4; ic++)
 	{
@@ -260,14 +317,45 @@ void solveContact3(b3GpuConstraint4* cs,
 static inline void solveFriction(b3GpuConstraint4& cs,
 								 const b3Vector3& posA, const b3Vector3& linVelARO, const b3Vector3& angVelARO, float invMassA, const b3Matrix3x3& invInertiaA,
 								 const b3Vector3& posB, const b3Vector3& linVelBRO, const b3Vector3& angVelBRO, float invMassB, const b3Matrix3x3& invInertiaB,
-								 float maxRambdaDt[4], float minRambdaDt[4], b3Vector3& dLinVelA, b3Vector3& dAngVelA, b3Vector3& dLinVelB, b3Vector3& dAngVelB)
+								 float maxRambdaDt[4], float minRambdaDt[4], b3Vector3& dLinVelA, b3Vector3& dAngVelA, b3Vector3& dLinVelB, b3Vector3& dAngVelB,
+								 int constraintIdx, b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities,
+								 const std::map<int, std::vector<int>>& ppMap)
 {
+	if (cs.m_fJacCoeffInv[0] == 0)
+		return;
+
 	b3Vector3 linVelA = linVelARO + dLinVelA;
 	b3Vector3 linVelB = linVelBRO + dLinVelB;
 	b3Vector3 angVelA = angVelARO + dAngVelA;
 	b3Vector3 angVelB = angVelBRO + dAngVelB;
 
-	if (cs.m_fJacCoeffInv[0] == 0 && cs.m_fJacCoeffInv[0] == 0) return;
+	b3Vector3 ppLinVelA = b3MakeVector3(0.0, 0.0, 0.0);
+	b3Vector3 ppLinVelB = b3MakeVector3(0.0, 0.0, 0.0);
+	b3Vector3 ppAngVelA = b3MakeVector3(0.0, 0.0, 0.0);
+	b3Vector3 ppAngVelB = b3MakeVector3(0.0, 0.0, 0.0);
+
+	for (std::map<int, std::vector<int>>::const_iterator it = ppMap.begin(); it != ppMap.end(); ++it)
+	{
+		for (size_t k = 0; k < it->second.size(); ++k)
+		{
+			if (it->second[k] == cs.m_bodyA)
+			{
+				ppLinVelA += pushPullVelocities[it->first].m_linearVel;
+				ppAngVelA += pushPullVelocities[it->first].m_angularVel;
+			}
+			if (it->second[k] == cs.m_bodyB)
+			{
+				ppLinVelB += pushPullVelocities[it->first].m_linearVel;
+				ppAngVelB += pushPullVelocities[it->first].m_angularVel;
+			}
+		}
+	}
+
+	linVelA += ppLinVelA;
+	angVelA += ppAngVelA;
+	linVelB += ppLinVelB;
+	angVelB += ppAngVelB;
+
 	const b3Vector3& center = (const b3Vector3&)cs.m_center;
 
 	b3Vector3 n = -(const b3Vector3&)cs.m_linear;
@@ -307,10 +395,12 @@ static inline void solveFriction(b3GpuConstraint4& cs,
 		b3Vector3 linImp1 = invMassB * (-linear) * rambdaDt;
 		b3Vector3 angImp0 = (invInertiaA * angular0) * rambdaDt;
 		b3Vector3 angImp1 = (invInertiaB * angular1) * rambdaDt;
+
 #ifdef _WIN32
 		b3Assert(_finite(linImp0.getX()));
 		b3Assert(_finite(linImp1.getX()));
 #endif
+
 		if (invMassA)
 		{
 			dLinVelA += linImp0;
@@ -343,13 +433,12 @@ float calcJacCoeff(const b3Vector3& linear0, const b3Vector3& linear1, const b3V
 				   float invMass0, const b3Matrix3x3* invInertia0, float invMass1, const b3Matrix3x3* invInertia1, float countA, float countB)
 {
 	//	linear0,1 are normlized
-	float jmj0 = invMass0;  //dot3F4(linear0, linear0)*invMass0;
+	float jmj0 = invMass0;
 
 	float jmj1 = b3Dot(mtMul3(angular0, *invInertia0), angular0);
-	float jmj2 = invMass1;  //dot3F4(linear1, linear1)*invMass1;
+	float jmj2 = invMass1;
 	float jmj3 = b3Dot(mtMul3(angular1, *invInertia1), angular1);
 	return -1.f / ((jmj0 + jmj1) * countA + (jmj2 + jmj3) * countB);
-	//	return -1.f/((jmj0+jmj1)+(jmj2+jmj3));
 }
 
 void setConstraint4(const b3Vector3& posA, const b3Vector3& linVelA, const b3Vector3& angVelA, float invMassA, const b3Matrix3x3& invInertiaA,
@@ -368,13 +457,13 @@ void setConstraint4(const b3Vector3& posA, const b3Vector3& linVelA, const b3Vec
 	dstC->m_fJacCoeffInv[0] = dstC->m_fJacCoeffInv[1] = 0.f;
 
 	dstC->m_linear = src->m_worldNormalOnB;
-	dstC->m_linear[3] = 0.7f;  //src->getFrictionCoeff() );
+	dstC->m_linear[3] = src->getFrictionCoeff();  // 0.7f;
 	for (int ic = 0; ic < 4; ic++)
 	{
 		b3Vector3 r0 = src->m_worldPosB[ic] - posA;
 		b3Vector3 r1 = src->m_worldPosB[ic] - posB;
 
-		if (ic >= src->m_worldNormalOnB[3])  //npoints
+		if (ic >= src->m_worldNormalOnB[3])  // npoints
 		{
 			dstC->m_jacCoeffInv[ic] = 0.f;
 			continue;
@@ -391,7 +480,7 @@ void setConstraint4(const b3Vector3& posA, const b3Vector3& linVelA, const b3Vec
 			relVelN = calcRelVel(linear, -linear, angular0, angular1,
 								 linVelA, angVelA, linVelB, angVelB);
 
-			float e = 0.f;  //src->getRestituitionCoeff();
+			float e = src->getRestituitionCoeff();  // 0.f;
 			if (relVelN * relVelN < 0.004f)
 			{
 				e = 0.f;
@@ -448,8 +537,6 @@ void ContactToConstraintKernel(b3Contact4* gContact, b3RigidBodyData* gBodies, b
 							   float positionDrift,
 							   float positionConstraintCoeff, int gIdx, b3AlignedObjectArray<unsigned int>& bodyCount)
 {
-	//int gIdx = 0;//GET_GLOBAL_IDX;
-
 	if (gIdx < nContacts)
 	{
 		int aIdx = abs(gContact[gIdx].m_bodyAPtrAndSignBit);
@@ -459,17 +546,38 @@ void ContactToConstraintKernel(b3Contact4* gContact, b3RigidBodyData* gBodies, b
 		b3Vector3 linVelA = gBodies[aIdx].m_linVel;
 		b3Vector3 angVelA = gBodies[aIdx].m_angVel;
 		float invMassA = gBodies[aIdx].m_invMass;
-		b3Matrix3x3 invInertiaA = gShapes[aIdx].m_invInertiaWorld;  //.m_invInertia;
+		b3Matrix3x3 invInertiaA = gShapes[aIdx].m_invInertiaWorld;
 
 		b3Vector3 posB = gBodies[bIdx].m_pos;
 		b3Vector3 linVelB = gBodies[bIdx].m_linVel;
 		b3Vector3 angVelB = gBodies[bIdx].m_angVel;
 		float invMassB = gBodies[bIdx].m_invMass;
-		b3Matrix3x3 invInertiaB = gShapes[bIdx].m_invInertiaWorld;  //m_invInertia;
+		b3Matrix3x3 invInertiaB = gShapes[bIdx].m_invInertiaWorld;
 
 		b3GpuConstraint4 cs;
 		float countA = invMassA ? (float)(bodyCount[aIdx]) : 1;
 		float countB = invMassB ? (float)(bodyCount[bIdx]) : 1;
+
+		// Arbitrarily pick body A's friction & restitution if both bodies are dynamic
+		if (invMassA && invMassB)
+		{
+			gContact[gIdx].setFrictionCoeff(gBodies[aIdx].m_frictionCoeff);
+			gContact[gIdx].setRestituitionCoeff(gBodies[aIdx].m_restituitionCoeff);
+		}
+		else
+		{
+			if (invMassA)
+			{
+				gContact[gIdx].setFrictionCoeff(gBodies[aIdx].m_frictionCoeff);
+				gContact[gIdx].setRestituitionCoeff(gBodies[aIdx].m_restituitionCoeff);
+			}
+
+			if (invMassB)
+			{
+				gContact[gIdx].setFrictionCoeff(gBodies[bIdx].m_frictionCoeff);
+				gContact[gIdx].setRestituitionCoeff(gBodies[bIdx].m_restituitionCoeff);
+			}
+		}
 		setConstraint4(posA, linVelA, angVelA, invMassA, invInertiaA, posB, linVelB, angVelB, invMassB, invInertiaB,
 					   &gContact[gIdx], dt, positionDrift, positionConstraintCoeff, countA, countB,
 					   &cs);
@@ -481,17 +589,25 @@ void ContactToConstraintKernel(b3Contact4* gContact, b3RigidBodyData* gBodies, b
 }
 
 void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo,
-											  b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
+											  b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities, const std::map<int, std::vector<int>>& ppMap)
 {
 	B3_PROFILE("b3GpuJacobiContactSolver::solveGroup");
 
-	b3AlignedObjectArray<unsigned int> bodyCount;
-	bodyCount.resize(numBodies);
-	for (int i = 0; i < numBodies; i++)
-		bodyCount[i] = 0;
+	std::cout << "=== b3GpuJacobiContactSolver::solveGroupHost(): " << numBodies << " bodies, " << numManifolds << " contact manifolds. ===" << std::endl;
 
-	b3AlignedObjectArray<b3Int2> contactConstraintOffsets;
-	contactConstraintOffsets.resize(numManifolds);
+	m_data->m_bodyCountCPU.clear();
+	m_data->m_bodyCountCPU.resize(numBodies);
+	for (int i = 0; i < numBodies; i++)
+		m_data->m_bodyCountCPU[i] = 0;
+
+	std::cout << "bodyCount array before manifolds are considered: " << std::endl;
+	for (int i = 0; i < numBodies; i++)
+		std::cout << " " << i << ": " << m_data->m_bodyCountCPU[i] << std::endl;
+
+	m_data->m_numHostContacts = numManifolds;
+
+	m_data->m_contactConstraintOffsetsCPU.clear();
+	m_data->m_contactConstraintOffsetsCPU.resize(numManifolds);
 
 	std::cout << "Computing contactConstraintOffsets and bodyCount's..." << std::endl;
 	for (int i = 0; i < numManifolds; i++)
@@ -507,13 +623,13 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 
 		if (!isFixedA)
 		{
-			contactConstraintOffsets[i].x = bodyCount[bodyIndexA];
-			bodyCount[bodyIndexA]++;
+			m_data->m_contactConstraintOffsetsCPU[i].x = m_data->m_bodyCountCPU[bodyIndexA];
+			m_data->m_bodyCountCPU[bodyIndexA]++;
 		}
 		if (!isFixedB)
 		{
-			contactConstraintOffsets[i].y = bodyCount[bodyIndexB];
-			bodyCount[bodyIndexB]++;
+			m_data->m_contactConstraintOffsetsCPU[i].y = m_data->m_bodyCountCPU[bodyIndexB];
+			m_data->m_bodyCountCPU[bodyIndexB]++;
 		}
 	}
 
@@ -524,43 +640,61 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	m_data->m_scan->executeHost(bodyCount, offsetSplitBodies, numBodies, &totalNumSplitBodies);
 	int numlastBody = bodyCount[numBodies - 1];
 	totalNumSplitBodies += numlastBody;
-	printf("totalNumSplitBodies = %d\n", totalNumSplitBodies);
+	std::cout << "totalNumSplitBodies = " << totalNumSplitBodies << std::endl;
 
-	b3AlignedObjectArray<b3GpuConstraint4> contactConstraints;
-	contactConstraints.resize(numManifolds);
+	std::cout << "bodyCount array after manifolds are considered: " << std::endl;
+	for (int i = 0; i < numBodies; i++)
+		std::cout << " " << i << ": " << m_data->m_bodyCountCPU[i] << std::endl;
+
+	std::cout << std::endl;
+
+	std::cout << "contactConstraintOffsets array: " << std::endl;
+	for (int i = 0; i < numManifolds; i++)
+		std::cout << " " << i << ": x = " << m_data->m_contactConstraintOffsetsCPU[i].x << ", y = " << m_data->m_contactConstraintOffsetsCPU[i].y << std::endl;
+
+	m_data->m_offsetSplitBodiesCPU.resize(numBodies);
+	m_data->m_totalNumSplitBodiesCPU = 0;
+	m_data->m_scan->executeHost(m_data->m_bodyCountCPU, m_data->m_offsetSplitBodiesCPU, numBodies, &m_data->m_totalNumSplitBodiesCPU);
+	int numlastBody = m_data->m_bodyCountCPU[numBodies - 1];
+	m_data->m_totalNumSplitBodiesCPU += numlastBody;
+	std::cout << "totalNumSplitBodies = " << m_data->m_totalNumSplitBodiesCPU << std::endl;
+
+	m_data->m_contactConstraintsCPU.clear();
+	m_data->m_contactConstraintsCPU.resize(numManifolds);
 
 	std::cout << "ContactToConstraintKernel for " << numManifolds << "contact manifolds..." << std::endl;
 	for (int i = 0; i < numManifolds; i++)
 	{
-		ContactToConstraintKernel(&manifoldPtr[0], bodies, inertias, &contactConstraints[0], numManifolds,
+		ContactToConstraintKernel(&manifoldPtr[0], bodies, inertias, &m_data->m_contactConstraintsCPU[0], numManifolds,
 								  solverInfo.m_deltaTime,
 								  solverInfo.m_positionDrift,
 								  solverInfo.m_positionConstraintCoeff,
-								  i, bodyCount);
+								  i, m_data->m_bodyCountCPU);
 	}
 
 	int maxIter = solverInfo.m_numIterations;
 
-	b3AlignedObjectArray<b3Vector3> deltaLinearVelocities;
-	b3AlignedObjectArray<b3Vector3> deltaAngularVelocities;
-	deltaLinearVelocities.resize(totalNumSplitBodies);
-	deltaAngularVelocities.resize(totalNumSplitBodies);
-	for (unsigned int i = 0; i < totalNumSplitBodies; i++)
+	m_data->m_deltaLinearVelocitiesCPU.clear();
+	m_data->m_deltaAngularVelocitiesCPU.clear();
+	m_data->m_deltaLinearVelocitiesCPU.resize(m_data->m_totalNumSplitBodiesCPU);
+	m_data->m_deltaAngularVelocitiesCPU.resize(m_data->m_totalNumSplitBodiesCPU);
+
+	std::cout << "Zero-ing velocity delta vectors: " << m_data->m_totalNumSplitBodiesCPU << std::endl;
+	for (unsigned int i = 0; i < m_data->m_totalNumSplitBodiesCPU; i++)
 	{
-		deltaLinearVelocities[i].setZero();
-		deltaAngularVelocities[i].setZero();
+		m_data->m_deltaLinearVelocitiesCPU[i].setZero();
+		m_data->m_deltaAngularVelocitiesCPU[i].setZero();
 	}
 
-	std::cout << "Solver iterations: " << maxIter << std::endl;
+	// Resolve contacts
+	std::cout << "Resolving contacts: " << numManifolds << " contact manifolds, " << maxIter << " iterations." << std::endl;
 	for (int iter = 0; iter < maxIter; iter++)
 	{
-		int i = 0;
-		std::cout << "solveContacts " << iter << std::endl;
-		for (i = 0; i < numManifolds; i++)
+		for (int i = 0; i < numManifolds; i++)
 		{
 			//float frictionCoeff = contactConstraints[i].getFrictionCoeff();
-			int aIdx = (int)contactConstraints[i].m_bodyA;
-			int bIdx = (int)contactConstraints[i].m_bodyB;
+			int aIdx = (int)m_data->m_contactConstraintsCPU[i].m_bodyA;
+			int bIdx = (int)m_data->m_contactConstraintsCPU[i].m_bodyB;
 			b3RigidBodyData& bodyA = bodies[aIdx];
 			b3RigidBodyData& bodyB = bodies[bIdx];
 
@@ -573,40 +707,41 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 
 			if (bodyA.m_invMass)
 			{
-				int bodyOffsetA = offsetSplitBodies[aIdx];
-				int constraintOffsetA = contactConstraintOffsets[i].x;
+				int bodyOffsetA = m_data->m_offsetSplitBodiesCPU[aIdx];
+				int constraintOffsetA = m_data->m_contactConstraintOffsetsCPU[i].x;
 				int splitIndexA = bodyOffsetA + constraintOffsetA;
-				dlvAPtr = &deltaLinearVelocities[splitIndexA];
-				davAPtr = &deltaAngularVelocities[splitIndexA];
+				dlvAPtr = &m_data->m_deltaLinearVelocitiesCPU[splitIndexA];
+				davAPtr = &m_data->m_deltaAngularVelocitiesCPU[splitIndexA];
 			}
 
 			if (bodyB.m_invMass)
 			{
-				int bodyOffsetB = offsetSplitBodies[bIdx];
-				int constraintOffsetB = contactConstraintOffsets[i].y;
+				int bodyOffsetB = m_data->m_offsetSplitBodiesCPU[bIdx];
+				int constraintOffsetB = m_data->m_contactConstraintOffsetsCPU[i].y;
 				int splitIndexB = bodyOffsetB + constraintOffsetB;
-				dlvBPtr = &deltaLinearVelocities[splitIndexB];
-				davBPtr = &deltaAngularVelocities[splitIndexB];
+				dlvBPtr = &m_data->m_deltaLinearVelocitiesCPU[splitIndexB];
+				davBPtr = &m_data->m_deltaAngularVelocitiesCPU[splitIndexB];
 			}
 
 			{
 				float maxRambdaDt[4] = {FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX};
 				float minRambdaDt[4] = {0.f, 0.f, 0.f, 0.f};
 
-				solveContact(contactConstraints[i], (b3Vector3&)bodyA.m_pos, (b3Vector3&)bodyA.m_linVel, (b3Vector3&)bodyA.m_angVel, bodyA.m_invMass, inertias[aIdx].m_invInertiaWorld,
+				solveContact(m_data->m_contactConstraintsCPU[i], (b3Vector3&)bodyA.m_pos, (b3Vector3&)bodyA.m_linVel, (b3Vector3&)bodyA.m_angVel, bodyA.m_invMass, inertias[aIdx].m_invInertiaWorld,
 							 (b3Vector3&)bodyB.m_pos, (b3Vector3&)bodyB.m_linVel, (b3Vector3&)bodyB.m_angVel, bodyB.m_invMass, inertias[bIdx].m_invInertiaWorld,
-							 maxRambdaDt, minRambdaDt, *dlvAPtr, *davAPtr, *dlvBPtr, *davBPtr);
+							 maxRambdaDt, minRambdaDt, *dlvAPtr, *davAPtr, *dlvBPtr, *davBPtr,
+							 i, pushPullBehaviors, pushPullVelocities, ppMap);
 			}
 		}
 
-		//easy
 		std::cout << "averageVelocities 1 " << iter << std::endl;
+		// Average body velocities, round 1
 		for (int i = 0; i < numBodies; i++)
 		{
 			if (bodies[i].m_invMass)
 			{
-				int bodyOffset = offsetSplitBodies[i];
-				int count = bodyCount[i];
+				int bodyOffset = m_data->m_offsetSplitBodiesCPU[i];
+				int count = m_data->m_bodyCountCPU[i];
 				float factor = 1.f / float(count);
 				b3Vector3 averageLinVel;
 				averageLinVel.setZero();
@@ -614,21 +749,22 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 				averageAngVel.setZero();
 				for (int j = 0; j < count; j++)
 				{
-					averageLinVel += deltaLinearVelocities[bodyOffset + j] * factor;
-					averageAngVel += deltaAngularVelocities[bodyOffset + j] * factor;
+					averageLinVel += m_data->m_deltaLinearVelocitiesCPU[bodyOffset + j] * factor;
+					averageAngVel += m_data->m_deltaAngularVelocitiesCPU[bodyOffset + j] * factor;
 				}
 				for (int j = 0; j < count; j++)
 				{
-					deltaLinearVelocities[bodyOffset + j] = averageLinVel;
-					deltaAngularVelocities[bodyOffset + j] = averageAngVel;
+					m_data->m_deltaLinearVelocitiesCPU[bodyOffset + j] = averageLinVel;
+					m_data->m_deltaAngularVelocitiesCPU[bodyOffset + j] = averageAngVel;
 				}
 			}
 		}
 	}
+
+#if 1
+	// Solve friction
 	for (int iter = 0; iter < maxIter; iter++)
 	{
-		//int i=0;
-
 		//solve friction
 		std::cout << "solveFriction " << iter << std::endl;
 		for (int i = 0; i < numManifolds; i++)
@@ -639,11 +775,12 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 			float sum = 0;
 			for (int j = 0; j < 4; j++)
 			{
-				sum += contactConstraints[i].m_appliedRambdaDt[j];
+				sum += m_data->m_contactConstraintsCPU[i].m_appliedRambdaDt[j];
 			}
-			float frictionCoeff = contactConstraints[i].getFrictionCoeff();
-			int aIdx = (int)contactConstraints[i].m_bodyA;
-			int bIdx = (int)contactConstraints[i].m_bodyB;
+
+			float frictionCoeff = m_data->m_contactConstraintsCPU[i].getFrictionCoeff();
+			int aIdx = (int)m_data->m_contactConstraintsCPU[i].m_bodyA;
+			int bIdx = (int)m_data->m_contactConstraintsCPU[i].m_bodyB;
 			b3RigidBodyData& bodyA = bodies[aIdx];
 			b3RigidBodyData& bodyB = bodies[bIdx];
 
@@ -656,20 +793,20 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 
 			if (bodyA.m_invMass)
 			{
-				int bodyOffsetA = offsetSplitBodies[aIdx];
-				int constraintOffsetA = contactConstraintOffsets[i].x;
+				int bodyOffsetA = m_data->m_offsetSplitBodiesCPU[aIdx];
+				int constraintOffsetA = m_data->m_contactConstraintOffsetsCPU[i].x;
 				int splitIndexA = bodyOffsetA + constraintOffsetA;
-				dlvAPtr = &deltaLinearVelocities[splitIndexA];
-				davAPtr = &deltaAngularVelocities[splitIndexA];
+				dlvAPtr = &m_data->m_deltaLinearVelocitiesCPU[splitIndexA];
+				davAPtr = &m_data->m_deltaAngularVelocitiesCPU[splitIndexA];
 			}
 
 			if (bodyB.m_invMass)
 			{
-				int bodyOffsetB = offsetSplitBodies[bIdx];
-				int constraintOffsetB = contactConstraintOffsets[i].y;
+				int bodyOffsetB = m_data->m_offsetSplitBodiesCPU[bIdx];
+				int constraintOffsetB = m_data->m_contactConstraintOffsetsCPU[i].y;
 				int splitIndexB = bodyOffsetB + constraintOffsetB;
-				dlvBPtr = &deltaLinearVelocities[splitIndexB];
-				davBPtr = &deltaAngularVelocities[splitIndexB];
+				dlvBPtr = &m_data->m_deltaLinearVelocitiesCPU[splitIndexB];
+				davBPtr = &m_data->m_deltaAngularVelocitiesCPU[splitIndexB];
 			}
 
 			for (int j = 0; j < 4; j++)
@@ -678,19 +815,22 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 				minRambdaDt[j] = -maxRambdaDt[j];
 			}
 
-			solveFriction(contactConstraints[i], (b3Vector3&)bodyA.m_pos, (b3Vector3&)bodyA.m_linVel, (b3Vector3&)bodyA.m_angVel, bodyA.m_invMass, inertias[aIdx].m_invInertiaWorld,
+			solveFriction(m_data->m_contactConstraintsCPU[i],
+						  (b3Vector3&)bodyA.m_pos, (b3Vector3&)bodyA.m_linVel, (b3Vector3&)bodyA.m_angVel, bodyA.m_invMass, inertias[aIdx].m_invInertiaWorld,
 						  (b3Vector3&)bodyB.m_pos, (b3Vector3&)bodyB.m_linVel, (b3Vector3&)bodyB.m_angVel, bodyB.m_invMass, inertias[bIdx].m_invInertiaWorld,
-						  maxRambdaDt, minRambdaDt, *dlvAPtr, *davAPtr, *dlvBPtr, *davBPtr);
+						  maxRambdaDt, minRambdaDt,
+						  *dlvAPtr, *davAPtr, *dlvBPtr, *davBPtr,
+						  i, pushPullBehaviors, pushPullVelocities, ppMap);
 		}
 
-		//easy
 		std::cout << "averageVelocities 2 " << iter << std::endl;
+		// Average body velocities, round 2
 		for (int i = 0; i < numBodies; i++)
 		{
 			if (bodies[i].m_invMass)
 			{
-				int bodyOffset = offsetSplitBodies[i];
-				int count = bodyCount[i];
+				int bodyOffset = m_data->m_offsetSplitBodiesCPU[i];
+				int count = m_data->m_bodyCountCPU[i];
 				float factor = 1.f / float(count);
 				b3Vector3 averageLinVel;
 				averageLinVel.setZero();
@@ -698,29 +838,30 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 				averageAngVel.setZero();
 				for (int j = 0; j < count; j++)
 				{
-					averageLinVel += deltaLinearVelocities[bodyOffset + j] * factor;
-					averageAngVel += deltaAngularVelocities[bodyOffset + j] * factor;
+					averageLinVel += m_data->m_deltaLinearVelocitiesCPU[bodyOffset + j] * factor;
+					averageAngVel += m_data->m_deltaAngularVelocitiesCPU[bodyOffset + j] * factor;
 				}
 				for (int j = 0; j < count; j++)
 				{
-					deltaLinearVelocities[bodyOffset + j] = averageLinVel;
-					deltaAngularVelocities[bodyOffset + j] = averageAngVel;
+					m_data->m_deltaLinearVelocitiesCPU[bodyOffset + j] = averageLinVel;
+					m_data->m_deltaAngularVelocitiesCPU[bodyOffset + j] = averageAngVel;
 				}
 			}
 		}
 	}
+#endif
 
-	//easy
+	// Update body velocities
 	for (int i = 0; i < numBodies; i++)
 	{
 		if (bodies[i].m_invMass)
 		{
-			int bodyOffset = offsetSplitBodies[i];
-			int count = bodyCount[i];
+			int bodyOffset = m_data->m_offsetSplitBodiesCPU[i];
+			int count = m_data->m_bodyCountCPU[i];
 			if (count)
 			{
-				bodies[i].m_linVel += deltaLinearVelocities[bodyOffset];
-				bodies[i].m_angVel += deltaAngularVelocities[bodyOffset];
+				bodies[i].m_linVel += m_data->m_deltaLinearVelocitiesCPU[bodyOffset];
+				bodies[i].m_angVel += m_data->m_deltaAngularVelocitiesCPU[bodyOffset];
 			}
 		}
 	}
@@ -736,9 +877,7 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 	std::cout << "Push-pull behaviours velocities count: " << pushPullVelocities.size() << std::endl;
 
 	B3_PROFILE("b3GpuJacobiContactSolver::solveGroup");
-
-	//int numBodies = bodies->size();
-	int numManifolds = numContacts;  //manifoldPtr->size();
+	int numManifolds = numContacts;
 
 	{
 		B3_PROFILE("resize");

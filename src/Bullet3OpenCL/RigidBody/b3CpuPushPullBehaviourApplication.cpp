@@ -4,11 +4,17 @@
 #include <vector>
 #include <map>
 
-b3CpuPushPullBehaviourApplication::b3CpuPushPullBehaviourApplication()
+b3PushPullBehaviourApplication::b3PushPullBehaviourApplication()
 {
+
 }
 
-void b3CpuPushPullBehaviourApplication::registerPushPullBehavior(const b3RigidBodyPushPullBehavior& ppBehavior)
+const std::map<int, std::vector<int>>& b3PushPullBehaviourApplication::getRigidBodyToPushPullMap() const
+{
+	return m_rbToPPBehaviorMap;
+}
+
+void b3PushPullBehaviourApplication::registerPushPullBehavior(const b3RigidBodyPushPullBehavior& ppBehavior)
 {
 	int bodyIDIdx = m_registeredPushPullBodies.findBinarySearch(ppBehavior.m_bodyID);
 	if (bodyIDIdx == m_registeredPushPullBodies.size())
@@ -21,7 +27,7 @@ void b3CpuPushPullBehaviourApplication::registerPushPullBehavior(const b3RigidBo
 	m_pushPullBehaviors.push_back(ppBehavior);
 }
 
-void b3CpuPushPullBehaviourApplication::unregisterPushPullBehavior(const b3RigidBodyPushPullBehavior& ppBehavior)
+void b3PushPullBehaviourApplication::unregisterPushPullBehavior(const b3RigidBodyPushPullBehavior& ppBehavior)
 {
 	int bodyIDIdx = m_registeredPushPullBodies.findBinarySearch(ppBehavior.m_bodyID);
 	if (bodyIDIdx < m_registeredPushPullBodies.size())
@@ -35,18 +41,13 @@ void b3CpuPushPullBehaviourApplication::unregisterPushPullBehavior(const b3Rigid
 	m_pushPullBehaviors.removeAtIndex(bodyIDIdx);
 }
 
-void b3CpuPushPullBehaviourApplication::applyPushPullBehaviours(struct b3RigidBodyData* rigidBodies,
-																unsigned int numBodies, float timeStep, float angularDamp,
-																const b3Vector3& gravity,
-																const b3AlignedObjectArray<b3BroadphasePair>& overlappingPairsCPU,
-																const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors,
-																b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
+void b3PushPullBehaviourApplication::findPushPullContacts(struct b3RigidBodyData* rigidBodies,
+						  unsigned int numBodies, float timeStep,
+						  const b3AlignedObjectArray<b3BroadphasePair>& overlappingPairsCPU,
+						  b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
 {
+	m_rbToPPBehaviorMap.clear();
 	pushPullVelocities.resize(numBodies);
-	std::cout << "Applying PushPullBehaviours: " << m_pushPullBehaviors.size() << std::endl;
-
-	std::multimap<int, int> rbToPPBehaviorMap;
-
 	for (int l = 0; l < overlappingPairsCPU.size(); ++l)
 	{
 		for (int k = 0; k < m_pushPullBehaviors.size(); ++k)
@@ -54,103 +55,110 @@ void b3CpuPushPullBehaviourApplication::applyPushPullBehaviours(struct b3RigidBo
 			if (m_pushPullBehaviors[k].m_bodyID == overlappingPairsCPU[l].x)
 			{
 				std::cout << "Body ID " << overlappingPairsCPU[l].y << " (y) in contact with push-pull rigid: " << m_pushPullBehaviors[k].m_bodyID << std::endl;
-				rbToPPBehaviorMap.insert(std::make_pair(overlappingPairsCPU[l].y, k));
+				m_rbToPPBehaviorMap[overlappingPairsCPU[l].y].push_back(k);
 			}
 			else if (m_pushPullBehaviors[k].m_bodyID == overlappingPairsCPU[l].y)
 			{
 				std::cout << "Body ID " << overlappingPairsCPU[l].x << " (x) in contact with push-pull rigid: " << m_pushPullBehaviors[k].m_bodyID << std::endl;
-				rbToPPBehaviorMap.insert(std::make_pair(overlappingPairsCPU[l].x, k));
+				m_rbToPPBehaviorMap[overlappingPairsCPU[l].x].push_back(k);
 			}
 		}
 	}
 
-	auto it = rbToPPBehaviorMap.begin();
+	for (auto it = m_rbToPPBehaviorMap.begin(); it != m_rbToPPBehaviorMap.end(); ++it)
+	{
+		b3Vector3 ppLinAcc = b3MakeVector3(0, 0, 0);
+		b3Vector3 ppAngAcc = b3MakeVector3(0, 0, 0);
+
+		int velsAdded = 0;
+		for (size_t k = 0; k < it->second.size(); ++k)
+		{
+			// if (!m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_perContactPoint)
+			{
+				std::cout << "Adding acceleration for body " << it->first << ": linear = (" << m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_linearAcc.x << "," << m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_linearAcc.y << "," << m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_linearAcc.z << ");"
+						  << " angular = " << m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_angularAcc.x << "," << m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_angularAcc.y << "," << m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_angularAcc.z << ")" << std::endl;
+
+				ppLinAcc.x += m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_linearAcc.x;
+				ppLinAcc.y += m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_linearAcc.y;
+				ppLinAcc.z += m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_linearAcc.z;
+
+				ppAngAcc.x += m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_angularAcc.x;
+				ppAngAcc.y += m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_angularAcc.y;
+				ppAngAcc.z += m_pushPullBehaviors[m_rbToPPBehaviorMap[it->first][k]].m_angularAcc.z;
+				velsAdded++;
+			}
+		}
+
+		std::cout << "Setting body pushPullVelocities[" << it->first << "] with " << velsAdded << " ppAccels; m_angularAcc = (" << ppAngAcc.x << "," << ppAngAcc.y << "," << ppAngAcc.z << "); "
+				  << "m_linearAcc = (" << ppLinAcc.x << ", " << ppLinAcc.y << ", " << ppLinAcc.z << ")"
+				  << std::endl;
+
+		pushPullVelocities[it->first].m_angularAcc = ppAngAcc;
+		pushPullVelocities[it->first].m_linearAcc = ppLinAcc;
+
+		pushPullVelocities[it->first].m_angularVel = ppAngAcc * timeStep;
+		pushPullVelocities[it->first].m_linearVel = ppLinAcc * timeStep;
+	}
+
+	/*auto it = rbToPPBehaviorMap.begin();
 	auto end = rbToPPBehaviorMap.end();
 
 	while (it != end)
 	{
 		auto key = it->first;
-		b3Vector3 ppLinVel = b3MakeVector3(0, 0, 0);
-		b3Vector3 ppAngVel = b3MakeVector3(0, 0, 0);
+		b3Vector3 ppLinAcc = b3MakeVector3(0, 0, 0);
+		b3Vector3 ppAngAcc = b3MakeVector3(0, 0, 0);
 
+		int velsAdded = 0;
 		do
 		{
-			if (++it == end)
+			if (it++ == end)
 				break;
 
-			ppLinVel.x += m_pushPullBehaviors[it->second].m_linearVel.x;
-			ppLinVel.y += m_pushPullBehaviors[it->second].m_linearVel.y;
-			ppLinVel.z += m_pushPullBehaviors[it->second].m_linearVel.z;
+			std::cout << "Adding acceleration for body " << it->second << ": linear = (" << m_pushPullBehaviors[it->second].m_linearAcc.x << "," << m_pushPullBehaviors[it->second].m_linearAcc.y << "," << m_pushPullBehaviors[it->second].m_linearAcc.z << ");"
+					  << " angular = " << m_pushPullBehaviors[it->second].m_angularAcc.x << "," << m_pushPullBehaviors[it->second].m_angularAcc.y << "," << m_pushPullBehaviors[it->second].m_angularAcc.z << ")" << std::endl;
 
-			ppAngVel.x += m_pushPullBehaviors[it->second].m_angularVel.x;
-			ppAngVel.y += m_pushPullBehaviors[it->second].m_angularVel.y;
-			ppAngVel.z += m_pushPullBehaviors[it->second].m_angularVel.z;
+			ppLinAcc.x += m_pushPullBehaviors[it->second].m_linearAcc.x;
+			ppLinAcc.y += m_pushPullBehaviors[it->second].m_linearAcc.y;
+			ppLinAcc.z += m_pushPullBehaviors[it->second].m_linearAcc.z;
 
+			ppAngAcc.x += m_pushPullBehaviors[it->second].m_angularAcc.x;
+			ppAngAcc.y += m_pushPullBehaviors[it->second].m_angularAcc.y;
+			ppAngAcc.z += m_pushPullBehaviors[it->second].m_angularAcc.z;
+			velsAdded++;
 		} while (it->first == key);
 
-		pushPullVelocities[key].m_angularVel = ppAngVel;
-		pushPullVelocities[key].m_linearVel = ppLinVel;
-	}
+		std::cout << "Setting body pushPullVelocities[" << key << "] with " << velsAdded << " ppAccels; m_angularAcc = (" << ppAngAcc.x << "," << ppAngAcc.y << "," << ppAngAcc.z << "); "
+				  << "m_linearAcc = (" << ppLinAcc.x << ", " << ppLinAcc.y << ", " << ppLinAcc.z << ")"
+				  << std::endl;
+
+		pushPullVelocities[key].m_angularAcc = ppAngAcc;
+		pushPullVelocities[key].m_linearAcc = ppLinAcc;
+
+		pushPullVelocities[key].m_angularVel = ppAngAcc * timeStep;
+		pushPullVelocities[key].m_linearVel = ppLinAcc * timeStep;
+	}*/
+}
+
+void b3PushPullBehaviourApplication::applyPushPullBehavioursCPU(struct b3RigidBodyData* rigidBodies,
+																unsigned int numBodies, float timeStep,
+																const b3AlignedObjectArray<b3BroadphasePair>& overlappingPairsCPU,
+																const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors,
+																b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
+{
+	std::cout << "Applying PushPullBehaviours: " << m_pushPullBehaviors.size() << "; timeStep = " << timeStep << std::endl;
 
 	for (int k = 0; k < numBodies; ++k)
 	{
 		if (rigidBodies[k].m_invMass != 0.f)
 		{
-			float BT_GPU_ANGULAR_MOTION_THRESHOLD = (0.25f * 3.14159254f);
-
-			//angular velocity
-			{
-				b3Float4 axis;
-
-				//add some hardcoded angular damping
-				rigidBodies[k].m_angVel.x *= angularDamp;
-				rigidBodies[k].m_angVel.y *= angularDamp;
-				rigidBodies[k].m_angVel.z *= angularDamp;
-
-				b3Float4 angvel = rigidBodies[k].m_angVel;
-
-				// Add angular acceleration from push-pull behaviors
-				angvel += pushPullBehaviors[k].m_angularAcc * timeStep;
-
-				float fAngle = b3Sqrt(b3Dot3F4(angvel, angvel));
-
-				//limit the angular motion
-				if (fAngle * timeStep > BT_GPU_ANGULAR_MOTION_THRESHOLD)
-				{
-					fAngle = BT_GPU_ANGULAR_MOTION_THRESHOLD / timeStep;
-				}
-				if (fAngle < 0.001f)
-				{
-					// use Taylor's expansions of sync function
-					axis = angvel * (0.5f * timeStep - (timeStep * timeStep * timeStep) * 0.020833333333f * fAngle * fAngle);
-				}
-				else
-				{
-					// sync(fAngle) = sin(c*fAngle)/t
-					axis = angvel * (b3Sin(0.5f * fAngle * timeStep) / fAngle);
-				}
-
-				b3Quat dorn;
-				dorn.x = axis.x;
-				dorn.y = axis.y;
-				dorn.z = axis.z;
-				dorn.w = b3Cos(fAngle * timeStep * 0.5f);
-				b3Quat orn0 = rigidBodies[k].m_quat;
-				b3Quat predictedOrn = b3QuatMul(dorn, orn0);
-				predictedOrn = b3QuatNormalized(predictedOrn);
-				rigidBodies[k].m_quat = predictedOrn;
-			}
-
-			// Correct order is acceleration -> velocity -> position...
-			//apply gravity
-			rigidBodies[k].m_linVel += gravity * timeStep;
+			std::cout << "Appling push-pull velocities to body " << k
+					  << ": linear  = (" << pushPullVelocities[k].m_linearVel.x << "," << pushPullVelocities[k].m_linearVel.y << "," << pushPullVelocities[k].m_linearVel.z << ")"
+					  << ": angular = (" << pushPullVelocities[k].m_angularVel.x << "," << pushPullVelocities[k].m_angularVel.y << "," << pushPullVelocities[k].m_angularVel.z << ")" << std::endl;
 
 			// apply velocity from push-pull behaviors
-
-			rigidBodies[k].m_linVel += pushPullBehaviors[k].m_linearAcc * timeStep;
-
-			//linear velocity
-			rigidBodies[k].m_pos += rigidBodies[k].m_linVel * timeStep;
+			rigidBodies[k].m_linVel += pushPullVelocities[k].m_linearVel;
+			rigidBodies[k].m_angVel += pushPullVelocities[k].m_angularVel;
 		}
 	}
 }

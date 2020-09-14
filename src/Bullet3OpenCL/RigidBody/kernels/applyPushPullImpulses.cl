@@ -39,66 +39,17 @@ __kernel void applyPushPullImpulsesKernel(__global b3RigidBodyData_t* bodies, co
 				}
 			}
 
-			float BT_GPU_ANGULAR_MOTION_THRESHOLD = (0.25f * 3.14159254f);
-
-			//angular velocity
-			{
-				b3Float4 axis;
-				//add some hardcoded angular damping
-				bodies[nodeID].m_angVel.x *= angularDamping;
-				bodies[nodeID].m_angVel.y *= angularDamping;
-				bodies[nodeID].m_angVel.z *= angularDamping;
-
-				b3Float4 angvel = bodies[nodeID].m_angVel;
-
-				angvel.x += ppAngVel.x;
-				angvel.y += ppAngVel.y;
-				angvel.z += ppAngVel.z;
-				
-				float fAngle = b3Sqrt(b3Dot3F4(angvel, angvel));
-
-				//limit the angular motion
-				if (fAngle * timeStep > BT_GPU_ANGULAR_MOTION_THRESHOLD)
-				{
-					fAngle = BT_GPU_ANGULAR_MOTION_THRESHOLD / timeStep;
-				}
-				if (fAngle < 0.001f)
-				{
-					// use Taylor's expansions of sync function
-					axis = angvel * (0.5f * timeStep - (timeStep * timeStep * timeStep) * 0.020833333333f * fAngle * fAngle);
-				}
-				else
-				{
-					// sync(fAngle) = sin(c*fAngle)/t
-					axis = angvel * (b3Sin(0.5f * fAngle * timeStep) / fAngle);
-				}
-
-				b3Quat dorn;
-				dorn.x = axis.x;
-				dorn.y = axis.y;
-				dorn.z = axis.z;
-				dorn.w = b3Cos(fAngle * timeStep * 0.5f);
-				b3Quat orn0 = bodies[nodeID].m_quat;
-				b3Quat predictedOrn = b3QuatMul(dorn, orn0);
-				predictedOrn = b3QuatNormalized(predictedOrn);
-				bodies[nodeID].m_quat = predictedOrn;
-			}
-
-			// Record the push-pull related velocity terms for debugging
-			pushPullVelocities[nodeID].m_linearAcc = ppLinVel;
-			pushPullVelocities[nodeID].m_angularAcc = ppAngVel;
-
-			// Correct order is acceleration -> velocity -> position...
-			//apply gravity
-			bodies[nodeID].m_linVel += gravityAcceleration * timeStep;
-
-			// Apply push-pull behavior linear velocity if applicable: Only add once and subtract again once contact with push-pull enabled object goes away.
+			// Apply push-pull behavior angular velocity
+			bodies[nodeID].m_angVel += ppAngVel;
+			
+			// Apply push-pull behavior linear velocity
 			bodies[nodeID].m_linVel.x += ppLinVel.x;
 			bodies[nodeID].m_linVel.y += ppLinVel.y;
 			bodies[nodeID].m_linVel.z += ppLinVel.z;
 
-			//linear velocity
-			bodies[nodeID].m_pos += bodies[nodeID].m_linVel * timeStep;
+			// Record the push-pull related velocity terms for debugging
+			pushPullVelocities[nodeID].m_linearVel = ppLinVel;
+			pushPullVelocities[nodeID].m_angularVel = ppAngVel;
 		}
 	}
 }

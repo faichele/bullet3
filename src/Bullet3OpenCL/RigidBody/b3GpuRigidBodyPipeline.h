@@ -20,11 +20,16 @@ subject to the following restrictions:
 #include "Bullet3Collision/NarrowPhaseCollision/b3Config.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3Collidable.h"
 
+#include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
 
 #include "Bullet3Common/b3AlignedObjectArray.h"
 #include "Bullet3Collision/NarrowPhaseCollision/b3RaycastInfo.h"
 #include "Bullet3Collision/NarrowPhaseCollision/b3Contact4.h"
+
+class b3PgsJacobiSolver;
+class b3GpuPgsContactSolver;
+class b3GpuJacobiContactSolver;
 
 class b3GpuRigidBodyPipeline
 {
@@ -70,7 +75,7 @@ public:
 
 	const b3AlignedObjectArray<int>& getCollisionFlags();
 
-	void setPhysicsInstancePushPullBehavior(int instanceIndex, float* translationalVelocity, float* rotationalVelocity, float* anchorPoint, float* anchorOrientation);
+	void setPhysicsInstancePushPullBehavior(int instanceIndex, float* translationalVelocity, float* rotationalVelocity, float* translationalAcceleration, float* rotationalAcceleration, float* anchorPoint, float* anchorOrientation, bool perContactPoint = true);
 	void removePhysicsInstancePushPullBehavior(int instanceIndex);
 
 	const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& getPushPullBehaviors() const;
@@ -79,7 +84,14 @@ public:
 
 	cl_mem getBodyBuffer();
 
+	b3AlignedObjectArray<b3RigidBodyData>& getBodies();
 	int getNumBodies() const;
+
+	b3PgsJacobiSolver* getSolver();
+	b3GpuPgsContactSolver* getSolver2();
+	b3GpuJacobiContactSolver* getSolver3();
+
+	b3AlignedObjectArray<b3Contact4>& getHostContacts();
 };
 
 #endif  //B3_GPU_RIGIDBODY_PIPELINE_H

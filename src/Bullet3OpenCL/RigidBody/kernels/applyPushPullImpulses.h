@@ -302,11 +302,13 @@ static const char* applyPushPullImpulsesCL= \
 "typedef struct b3RigidBodyPushPullBehavior b3RigidBodyPushPullBehavior_t;\n"
 "struct b3RigidBodyPushPullBehavior\n"
 "{\n"
+"public:\n"
 "	int m_bodyID;\n"
 "	int m_ghostObjectID;\n"
 "	b3Float4 m_bodyPosition;  // Should not be needed, but ConcaveScene demo operates with mesh offsets instead of actual origin transforms.\n"
 "	b3Quat m_bodyOrientation;\n"
 "	bool m_perContactPoint;\n"
+<<<<<<< HEAD
 "	b3Float4 m_linearAcc;\n"
 "	b3Float4 m_angularAcc;\n"
 "	/*b3RigidBodyPushPullBehavior()\n"
@@ -315,6 +317,18 @@ static const char* applyPushPullImpulsesCL= \
 "		m_ghostObjectID = -1;\n"
 "		m_bodyPosition = b3MakeFloat4(0, 0, 0, 0);\n"
 "		m_bodyOrientation = b3Quaternion(0, 0, 0, 1);\n"
+=======
+"	b3Float4 m_linearVel;\n"
+"	b3Float4 m_angularVel;\n"
+"	b3Float4 m_linearAcc;\n"
+"	b3Float4 m_angularAcc;\n"
+"	b3RigidBodyPushPullBehavior() : m_bodyID(-1), m_ghostObjectID(-1)\n"
+"	{\n"
+"		m_bodyPosition = b3MakeFloat4(0, 0, 0, 0);\n"
+"		m_bodyOrientation = b3Quaternion(0, 0, 0, 1);\n"
+"		m_linearVel = b3MakeFloat4(0, 0, 0, 0);\n"
+"		m_angularVel = b3MakeFloat4(0, 0, 0, 0);\n"
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "		m_linearAcc = b3MakeFloat4(0, 0, 0, 0);\n"
 "		m_angularAcc = b3MakeFloat4(0, 0, 0, 0);\n"
 "		m_perContactPoint = false;\n"
@@ -330,6 +344,21 @@ static const char* applyPushPullImpulsesCL= \
 "			m_bodyPosition.y = other.m_bodyPosition.y;\n"
 "			m_bodyPosition.z = other.m_bodyPosition.z;\n"
 "			m_bodyPosition.w = other.m_bodyPosition.w;\n"
+<<<<<<< HEAD
+=======
+"			m_bodyOrientation.x = other.m_bodyOrientation.x;\n"
+"			m_bodyOrientation.y = other.m_bodyOrientation.y;\n"
+"			m_bodyOrientation.z = other.m_bodyOrientation.z;\n"
+"			m_bodyOrientation.w = other.m_bodyOrientation.w;\n"
+"			m_linearVel.x = other.m_linearVel.x;\n"
+"			m_linearVel.y = other.m_linearVel.y;\n"
+"			m_linearVel.z = other.m_linearVel.z;\n"
+"			m_linearVel.w = other.m_linearVel.w;\n"
+"			m_angularVel.x = other.m_angularVel.x;\n"
+"			m_angularVel.y = other.m_angularVel.y;\n"
+"			m_angularVel.z = other.m_angularVel.z;\n"
+"			m_angularVel.w = other.m_angularVel.w;\n"
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "			m_linearAcc.x = other.m_linearAcc.x;\n"
 "			m_linearAcc.y = other.m_linearAcc.y;\n"
 "			m_linearAcc.z = other.m_linearAcc.z;\n"
@@ -338,10 +367,13 @@ static const char* applyPushPullImpulsesCL= \
 "			m_angularAcc.y = other.m_angularAcc.y;\n"
 "			m_angularAcc.z = other.m_angularAcc.z;\n"
 "			m_angularAcc.w = other.m_angularAcc.w;\n"
+<<<<<<< HEAD
 "			m_bodyOrientation.x = other.m_bodyOrientation.x;\n"
 "			m_bodyOrientation.y = other.m_bodyOrientation.y;\n"
 "			m_bodyOrientation.z = other.m_bodyOrientation.z;\n"
 "			m_bodyOrientation.w = other.m_bodyOrientation.w;\n"
+=======
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "		}\n"
 "	}\n"
 "	b3RigidBodyPushPullBehavior& operator=(const b3RigidBodyPushPullBehavior& other)\n"
@@ -355,6 +387,21 @@ static const char* applyPushPullImpulsesCL= \
 "			m_bodyPosition.y = other.m_bodyPosition.y;\n"
 "			m_bodyPosition.z = other.m_bodyPosition.z;\n"
 "			m_bodyPosition.w = other.m_bodyPosition.w;\n"
+<<<<<<< HEAD
+=======
+"			m_bodyOrientation.x = other.m_bodyOrientation.x;\n"
+"			m_bodyOrientation.y = other.m_bodyOrientation.y;\n"
+"			m_bodyOrientation.z = other.m_bodyOrientation.z;\n"
+"			m_bodyOrientation.w = other.m_bodyOrientation.w;\n"
+"			m_linearVel.x = other.m_linearVel.x;\n"
+"			m_linearVel.y = other.m_linearVel.y;\n"
+"			m_linearVel.z = other.m_linearVel.z;\n"
+"			m_linearVel.w = other.m_linearVel.w;\n"
+"			m_angularVel.x = other.m_angularVel.x;\n"
+"			m_angularVel.y = other.m_angularVel.y;\n"
+"			m_angularVel.z = other.m_angularVel.z;\n"
+"			m_angularVel.w = other.m_angularVel.w;\n"
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "			m_linearAcc.x = other.m_linearAcc.x;\n"
 "			m_linearAcc.y = other.m_linearAcc.y;\n"
 "			m_linearAcc.z = other.m_linearAcc.z;\n"
@@ -363,6 +410,7 @@ static const char* applyPushPullImpulsesCL= \
 "			m_angularAcc.y = other.m_angularAcc.y;\n"
 "			m_angularAcc.z = other.m_angularAcc.z;\n"
 "			m_angularAcc.w = other.m_angularAcc.w;\n"
+<<<<<<< HEAD
 "			m_bodyOrientation.x = other.m_bodyOrientation.x;\n"
 "			m_bodyOrientation.y = other.m_bodyOrientation.y;\n"
 "			m_bodyOrientation.z = other.m_bodyOrientation.z;\n"
@@ -370,10 +418,20 @@ static const char* applyPushPullImpulsesCL= \
 "		}\n"
 "		return *this;\n"
 "	}*/\n"
+=======
+"		}\n"
+"		return *this;\n"
+"	}\n"
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "};\n"
 "typedef struct b3RigidBodyBehaviorVelocities b3RigidBodyBehaviorVelocities_t;\n"
 "struct b3RigidBodyBehaviorVelocities\n"
 "{\n"
+<<<<<<< HEAD
+=======
+"	b3Float4 m_linearVel;\n"
+"	b3Float4 m_angularVel;\n"
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "	b3Float4 m_linearAcc;\n"
 "	b3Float4 m_angularAcc;\n"
 "	b3Float4 m_linearVelPerContact[B3_RIGID_BODY_BEHAVIOR_MAX_CONTACTS];\n"
@@ -413,6 +471,7 @@ static const char* applyPushPullImpulsesCL= \
 "					}\n"
 "				}\n"
 "			}\n"
+<<<<<<< HEAD
 "			float BT_GPU_ANGULAR_MOTION_THRESHOLD = (0.25f * 3.14159254f);\n"
 "			//angular velocity\n"
 "			{\n"
@@ -459,11 +518,18 @@ static const char* applyPushPullImpulsesCL= \
 "			//apply gravity\n"
 "			bodies[nodeID].m_linVel += gravityAcceleration * timeStep;\n"
 "			// Apply push-pull behavior linear velocity if applicable: Only add once and subtract again once contact with push-pull enabled object goes away.\n"
+=======
+"			// Apply push-pull behavior angular velocity\n"
+"			bodies[nodeID].m_angVel += ppAngVel;\n"
+"			\n"
+"			// Apply push-pull behavior linear velocity\n"
+>>>>>>> Working CPU-based implementation for push-pull behaviors.
 "			bodies[nodeID].m_linVel.x += ppLinVel.x;\n"
 "			bodies[nodeID].m_linVel.y += ppLinVel.y;\n"
 "			bodies[nodeID].m_linVel.z += ppLinVel.z;\n"
-"			//linear velocity\n"
-"			bodies[nodeID].m_pos += bodies[nodeID].m_linVel * timeStep;\n"
+"			// Record the push-pull related velocity terms for debugging\n"
+"			pushPullVelocities[nodeID].m_linearVel = ppLinVel;\n"
+"			pushPullVelocities[nodeID].m_angularVel = ppAngVel;\n"
 "		}\n"
 "	}\n"
 "}\n"
