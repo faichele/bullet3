@@ -258,7 +258,6 @@ void OpenGLGuiHelper::createRigidBodyGraphicsObject(btRigidBody* body, const btV
 	createCollisionObjectGraphicsObject(body, color);
 }
 
-
 class MyTriangleCollector2 : public btTriangleCallback
 {
 public:
@@ -268,7 +267,7 @@ public:
 	btScalar m_textureScaling;
 
 	MyTriangleCollector2(const btVector3& aabbMin, const btVector3& aabbMax)
-		:m_aabbMin(aabbMin), m_aabbMax(aabbMax), m_textureScaling(1)
+		: m_aabbMin(aabbMin), m_aabbMax(aabbMax), m_textureScaling(1)
 	{
 		m_pVerticesOut = 0;
 		m_pIndicesOut = 0;
@@ -280,7 +279,7 @@ public:
 		{
 			GLInstanceVertex v;
 			v.xyzw[3] = 0;
-			
+
 			btVector3 normal = (tris[0] - tris[1]).cross(tris[0] - tris[2]);
 			normal.safeNormalize();
 			for (int l = 0; l < 3; l++)
@@ -288,11 +287,11 @@ public:
 				v.xyzw[l] = tris[k][l];
 				v.normal[l] = normal[l];
 			}
-			
+
 			btVector3 extents = m_aabbMax - m_aabbMin;
-			
-			v.uv[0] = (1.-((v.xyzw[0] - m_aabbMin[0]) / (m_aabbMax[0] - m_aabbMin[0])))*m_textureScaling;
-			v.uv[1] = (1.-(v.xyzw[1] - m_aabbMin[1]) / (m_aabbMax[1] - m_aabbMin[1]))*m_textureScaling;
+
+			v.uv[0] = (1. - ((v.xyzw[0] - m_aabbMin[0]) / (m_aabbMax[0] - m_aabbMin[0]))) * m_textureScaling;
+			v.uv[1] = (1. - (v.xyzw[1] - m_aabbMin[1]) / (m_aabbMax[1] - m_aabbMin[1])) * m_textureScaling;
 
 			m_pIndicesOut->push_back(m_pVerticesOut->size());
 			m_pVerticesOut->push_back(v);
@@ -313,6 +312,13 @@ void OpenGLGuiHelper::createCollisionObjectGraphicsObject(btCollisionObject* bod
 			btVector3 localScaling(1, 1, 1);
 			int graphicsInstanceId = m_data->m_glApp->m_renderer->registerGraphicsInstance(graphicsShapeId, startTransform.getOrigin(), startTransform.getRotation(), color, localScaling);
 			body->setUserIndex(graphicsInstanceId);
+
+			btSoftBody* sb = btSoftBody::upcast(body);
+			if (sb)
+			{
+				int graphicsInstanceId = body->getUserIndex();
+				changeInstanceFlags(graphicsInstanceId, B3_INSTANCE_DOUBLE_SIDED);
+			}
 		}
 	}
 }
@@ -385,7 +391,7 @@ void OpenGLGuiHelper::changeInstanceFlags(int instanceUid, int flags)
 	if (instanceUid >= 0)
 	{
 		//careful, flags/instanceUid is swapped
-		m_data->m_glApp->m_renderer->writeSingleInstanceFlagsToCPU(  flags, instanceUid);
+		m_data->m_glApp->m_renderer->writeSingleInstanceFlagsToCPU(flags, instanceUid);
 	}
 }
 void OpenGLGuiHelper::changeScaling(int instanceUid, const double scaling[3])
@@ -469,8 +475,7 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 	if (collisionShape->getShapeType() == BOX_SHAPE_PROXYTYPE)
 	{
 		btBoxShape* boxShape = (btBoxShape*)collisionShape;
-		
-		
+
 		btAlignedObjectArray<float> transformedVertices;
 
 		btVector3 halfExtents = boxShape->getHalfExtentsWithMargin();
@@ -494,8 +499,8 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 			{
 				btVector3 vert;
 				vert.setValue(cube_vertices_textured[i * 9 + 0],
-					cube_vertices_textured[i * 9 + 1],
-					cube_vertices_textured[i * 9 + 2]);
+							  cube_vertices_textured[i * 9 + 1],
+							  cube_vertices_textured[i * 9 + 2]);
 
 				btVector3 trVer = halfExtents * vert;
 				transformedVertices[i * 9 + 0] = trVer[0];
@@ -518,17 +523,15 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 		return;
 	}
 
-
 	if (collisionShape->getShapeType() == TERRAIN_SHAPE_PROXYTYPE)
 	{
 		const btHeightfieldTerrainShape* heightField = static_cast<const btHeightfieldTerrainShape*>(collisionShape);
-		
-		
+
 		btVector3 aabbMin, aabbMax;
 		btTransform tr;
 		tr.setIdentity();
 		heightField->getAabb(tr, aabbMin, aabbMax);
-		MyTriangleCollector2  col(aabbMin, aabbMax);
+		MyTriangleCollector2 col(aabbMin, aabbMax);
 		if (heightField->getUserValue3())
 		{
 			col.m_textureScaling = heightField->getUserValue3();
@@ -548,20 +551,18 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 			{
 				userImage = m_data->m_checkedTexture;
 			}
-			int shapeId = m_data->m_glApp->m_renderer->registerShape(&gfxVertices[0].xyzw[0], gfxVertices.size(), &indices[0], indices.size(),1, userImage);
+			int shapeId = m_data->m_glApp->m_renderer->registerShape(&gfxVertices[0].xyzw[0], gfxVertices.size(), &indices[0], indices.size(), 1, userImage);
 			collisionShape->setUserIndex(shapeId);
 		}
 		return;
 	}
-
 
 	if (collisionShape->getShapeType() == SOFTBODY_SHAPE_PROXYTYPE)
 	{
 		computeSoftBodyVertices(collisionShape, gfxVertices, indices);
 		if (gfxVertices.size() && indices.size())
 		{
-			int shapeId = registerGraphicsShape(&gfxVertices[0].xyzw[0], gfxVertices.size(), &indices[0], indices.size(), B3_GL_TRIANGLES,
-												m_data->m_checkedTexture);
+			int shapeId = registerGraphicsShape(&gfxVertices[0].xyzw[0], gfxVertices.size(), &indices[0], indices.size(), B3_GL_TRIANGLES, m_data->m_checkedTexture);
 
 			b3Assert(shapeId >= 0);
 			collisionShape->setUserIndex(shapeId);
@@ -637,8 +638,6 @@ void OpenGLGuiHelper::createCollisionShapeGraphicsObject(btCollisionShape* colli
 			return;
 		}
 	}
-
-	
 
 	if (collisionShape->getShapeType() == SPHERE_SHAPE_PROXYTYPE)
 	{
@@ -1051,10 +1050,32 @@ void OpenGLGuiHelper::syncPhysicsToGraphics(const btDiscreteDynamicsWorld* rbWor
 			btCollisionShape* collisionShape = colObj->getCollisionShape();
 			if (collisionShape->getShapeType() == SOFTBODY_SHAPE_PROXYTYPE && collisionShape->getUserIndex() >= 0)
 			{
+				const btSoftBody* psb = (const btSoftBody*)colObj;
 				btAlignedObjectArray<GLInstanceVertex> gfxVertices;
-				btAlignedObjectArray<int> indices;
-				computeSoftBodyVertices(collisionShape, gfxVertices, indices);
-				m_data->m_glApp->m_renderer->updateShape(collisionShape->getUserIndex(), &gfxVertices[0].xyzw[0]);
+
+				if (psb->m_renderNodes.size() > 0)
+				{
+					gfxVertices.resize(psb->m_renderNodes.size());
+					for (int i = 0; i < psb->m_renderNodes.size(); i++)  // Foreach face
+					{
+						gfxVertices[i].xyzw[0] = psb->m_renderNodes[i].m_x[0];
+						gfxVertices[i].xyzw[1] = psb->m_renderNodes[i].m_x[1];
+						gfxVertices[i].xyzw[2] = psb->m_renderNodes[i].m_x[2];
+						gfxVertices[i].xyzw[3] = psb->m_renderNodes[i].m_x[3];
+						gfxVertices[i].uv[0] = psb->m_renderNodes[i].m_uv1[0];
+						gfxVertices[i].uv[1] = psb->m_renderNodes[i].m_uv1[1];
+						//gfxVertices[i].normal[0] = psb->m_renderNodes[i].
+						gfxVertices[i].normal[0] = psb->m_renderNodes[i].m_normal[0];
+						gfxVertices[i].normal[1] = psb->m_renderNodes[i].m_normal[1];
+						gfxVertices[i].normal[2] = psb->m_renderNodes[i].m_normal[2];
+					}
+				}
+				else
+				{
+					btAlignedObjectArray<int> indices;
+					computeSoftBodyVertices(collisionShape, gfxVertices, indices);
+				}
+				m_data->m_glApp->m_renderer->updateShape(collisionShape->getUserIndex(), &gfxVertices[0].xyzw[0], gfxVertices.size());
 				continue;
 			}
 			btVector3 pos = colObj->getWorldTransform().getOrigin();
@@ -1449,11 +1470,6 @@ void OpenGLGuiHelper::autogenerateGraphicsObjects(btDiscreteDynamicsWorld* rbWor
 			color.setValue(1, 1, 1, 1);
 		}
 		createCollisionObjectGraphicsObject(colObj, color);
-		if (sb)
-		{
-			int graphicsInstanceId = colObj->getUserIndex();
-			changeInstanceFlags(graphicsInstanceId, B3_INSTANCE_DOUBLE_SIDED);
-		}
 	}
 }
 
@@ -1511,14 +1527,14 @@ void OpenGLGuiHelper::computeSoftBodyVertices(btCollisionShape* collisionShape,
 			}
 			for (int j = 0; j < 2; j++)
 			{
-				gfxVertices[currentIndex].uv[j] = 0.5;  //we don't have UV info...
+				gfxVertices[currentIndex].uv[j] = psb->m_faces[i].m_n[k]->m_x[j];
 			}
 			indices.push_back(currentIndex);
 		}
 	}
 }
 
-void OpenGLGuiHelper::updateShape(int shapeIndex, float* vertices)
+void OpenGLGuiHelper::updateShape(int shapeIndex, float* vertices, int numVertices)
 {
-	m_data->m_glApp->m_renderer->updateShape(shapeIndex, vertices);
+	m_data->m_glApp->m_renderer->updateShape(shapeIndex, vertices, numVertices);
 }

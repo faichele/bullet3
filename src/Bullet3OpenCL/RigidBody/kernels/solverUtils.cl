@@ -651,8 +651,8 @@ __global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBe
 	}
 }
 
-__kernel void SolveContactJacobiKernel(__global Constraint4* gConstraints, __global Body* gBodies, __global Shape* gShapes ,
-__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
+__kernel void SolveContactJacobiKernel(__global Constraint4* gConstraints, __global Body* gBodies, __global Shape* gShapes,
+__global int2* contactConstraintOffsets, __global unsigned int* offsetSplitBodies, __global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
 float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds, 
 __global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
 {

@@ -634,13 +634,11 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	}
 
 	std::cout << "Computing offsetSplitBodies..." << std::endl;
-	b3AlignedObjectArray<unsigned int> offsetSplitBodies;
-	offsetSplitBodies.resize(numBodies);
-	unsigned int totalNumSplitBodies;
-	m_data->m_scan->executeHost(bodyCount, offsetSplitBodies, numBodies, &totalNumSplitBodies);
-	int numlastBody = bodyCount[numBodies - 1];
-	totalNumSplitBodies += numlastBody;
-	std::cout << "totalNumSplitBodies = " << totalNumSplitBodies << std::endl;
+	m_data->m_offsetSplitBodiesCPU.resize(numBodies);
+	m_data->m_scan->executeHost(m_data->m_bodyCountCPU, m_data->m_offsetSplitBodiesCPU, numBodies, &m_data->m_totalNumSplitBodiesCPU);
+	int numlastBody = m_data->m_bodyCountCPU[numBodies - 1];
+	m_data->m_totalNumSplitBodiesCPU += numlastBody;
+	std::cout << "totalNumSplitBodies = " << m_data->m_totalNumSplitBodiesCPU << std::endl;
 
 	std::cout << "bodyCount array after manifolds are considered: " << std::endl;
 	for (int i = 0; i < numBodies; i++)
@@ -651,13 +649,6 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	std::cout << "contactConstraintOffsets array: " << std::endl;
 	for (int i = 0; i < numManifolds; i++)
 		std::cout << " " << i << ": x = " << m_data->m_contactConstraintOffsetsCPU[i].x << ", y = " << m_data->m_contactConstraintOffsetsCPU[i].y << std::endl;
-
-	m_data->m_offsetSplitBodiesCPU.resize(numBodies);
-	m_data->m_totalNumSplitBodiesCPU = 0;
-	m_data->m_scan->executeHost(m_data->m_bodyCountCPU, m_data->m_offsetSplitBodiesCPU, numBodies, &m_data->m_totalNumSplitBodiesCPU);
-	int numlastBody = m_data->m_bodyCountCPU[numBodies - 1];
-	m_data->m_totalNumSplitBodiesCPU += numlastBody;
-	std::cout << "totalNumSplitBodies = " << m_data->m_totalNumSplitBodiesCPU << std::endl;
 
 	m_data->m_contactConstraintsCPU.clear();
 	m_data->m_contactConstraintsCPU.resize(numManifolds);
@@ -924,7 +915,7 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 
 	{
 		B3_PROFILE("contactToConstraintSplitKernel");
-		b3LauncherCL launcher(m_queue, m_data->m_contactToConstraintSplitKernel, "m_contactToConstraintSplitKernel");
+		b3LauncherCL launcher(this->m_queue, m_data->m_contactToConstraintSplitKernel, "m_contactToConstraintSplitKernel");
 		launcher.setBuffer(contactBuf);
 		launcher.setBuffer(bodyBuf);
 		launcher.setBuffer(inertiaBuf);

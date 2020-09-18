@@ -57,8 +57,10 @@ struct CommonRenderInterface
 	virtual void setLightPosition(const float lightPos[3]) = 0;
 	virtual void setLightPosition(const double lightPos[3]) = 0;
 	virtual void setShadowMapResolution(int shadowMapResolution) = 0;
+	virtual void setShadowMapIntensity(double shadowMapIntensity) = 0;
+
 	virtual void setShadowMapWorldSize(float worldSize) = 0;
-	
+
 	virtual void setProjectiveTextureMatrices(const float viewMatrix[16], const float projectionMatrix[16]){};
 	virtual void setProjectiveTexture(bool useProjectiveTexture){};
 
@@ -79,7 +81,7 @@ struct CommonRenderInterface
 	virtual void drawTexturedTriangleMesh(float worldPosition[3], float worldOrientation[4], const float* vertices, int numvertices, const unsigned int* indices, int numIndices, float color[4], int textureIndex = -1, int vertexLayout = 0) = 0;
 
 	virtual int registerShape(const float* vertices, int numvertices, const int* indices, int numIndices, int primitiveType = B3_GL_TRIANGLES, int textureIndex = -1) = 0;
-	virtual void updateShape(int shapeIndex, const float* vertices) = 0;
+	virtual void updateShape(int shapeIndex, const float* vertices, int numVertices) = 0;
 
 	virtual int registerTexture(const unsigned char* texels, int width, int height, bool flipPixelsY = true) = 0;
 	virtual void updateTexture(int textureIndex, const unsigned char* texels, bool flipPixelsY = true) = 0;
@@ -102,7 +104,7 @@ struct CommonRenderInterface
 	virtual void writeSingleInstanceSpecularColorToCPU(const double* specular, int srcIndex) = 0;
 	virtual void writeSingleInstanceSpecularColorToCPU(const float* specular, int srcIndex) = 0;
 	virtual void writeSingleInstanceFlagsToCPU(int flags, int srcIndex) = 0;
-	
+
 	virtual int getTotalNumInstances() const = 0;
 
 	virtual void writeTransforms() = 0;

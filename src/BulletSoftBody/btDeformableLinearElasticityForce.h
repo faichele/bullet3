@@ -390,6 +390,7 @@ public:
 	void firstPiola(const btSoftBody::TetraScratch& s, btMatrix3x3& P)
 	{
 		btMatrix3x3 corotated_F = s.m_corotation.transpose() * s.m_F;
+
 		btMatrix3x3 epsilon = (corotated_F + corotated_F.transpose()) * 0.5 - btMatrix3x3::getIdentity();
 		btScalar trace = epsilon[0][0] + epsilon[1][1] + epsilon[2][2];
 		P = epsilon * btScalar(2) * m_mu + btMatrix3x3::getIdentity() * m_lambda * trace;

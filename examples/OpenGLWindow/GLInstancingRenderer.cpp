@@ -17,7 +17,6 @@ subject to the following restrictions:
 ///todo: make this configurable in the gui
 bool useShadowMap = true;  // true;//false;//true;
 
-
 #include <stdio.h>
 
 struct caster2
@@ -139,8 +138,6 @@ static InternalDataRenderer* sData2;
 
 GLint lineWidthRange[2] = {1, 1};
 
-
-
 struct b3GraphicsInstance
 {
 	GLuint m_cube_vao;
@@ -228,7 +225,7 @@ struct InternalDataRenderer : public GLInstanceRendererInternalData
 
 	b3Vector3 m_lightPos;
 	b3Vector3 m_lightSpecularIntensity;
-
+	float m_shadowmapIntensity;
 	GLuint m_defaultTexturehandle;
 	b3AlignedObjectArray<InternalTextureHandle> m_textureHandles;
 
@@ -248,15 +245,15 @@ struct InternalDataRenderer : public GLInstanceRendererInternalData
 							 m_shadowMap(0),
 							 m_shadowTexture(0),
 							 m_renderFrameBuffer(0),
-							m_shadowMapWidth(4096),
-							m_shadowMapHeight(4096),
-							m_shadowMapWorldSize(10),
-							m_updateShadowMap(true)
+							 m_shadowMapWidth(4096),
+							 m_shadowMapHeight(4096),
+							 m_shadowMapWorldSize(10),
+							 m_updateShadowMap(true)
 
 	{
-		
 		m_lightPos = b3MakeVector3(-50, 30, 40);
 		m_lightSpecularIntensity.setValue(1, 1, 1);
+		m_shadowmapIntensity = 0.3;
 
 		//clear to zero to make it obvious if the matrix is used uninitialized
 		for (int i = 0; i < 16; i++)
@@ -317,6 +314,7 @@ static GLint useShadow_MVP = 0;
 static GLint useShadow_lightPosIn = 0;
 static GLint useShadow_cameraPositionIn = 0;
 static GLint useShadow_materialShininessIn = 0;
+static GLint useShadow_shadowmapIntensityIn = 0;
 
 static GLint useShadow_ProjectionMatrix = 0;
 static GLint useShadow_DepthBiasModelViewMatrix = 0;
@@ -506,7 +504,6 @@ void GLInstancingRenderer::writeSingleInstanceFlagsToCPU(int flags, int srcIndex
 		gfxObj->m_flags &= ~B3_INSTANCE_DOUBLE_SIDED;
 	}
 }
-
 
 void GLInstancingRenderer::writeSingleInstanceColorToCPU(const double* color, int srcIndex2)
 {
@@ -1035,7 +1032,8 @@ void GLInstancingRenderer::replaceTexture(int shapeIndex, int textureId)
 		{
 			gfxObj->m_textureIndex = textureId;
 			gfxObj->m_flags |= B3_INSTANCE_TEXTURE;
-		} else
+		}
+		else
 		{
 			gfxObj->m_textureIndex = -1;
 			gfxObj->m_flags &= ~B3_INSTANCE_TEXTURE;
@@ -1101,10 +1099,13 @@ void GLInstancingRenderer::activateTexture(int textureIndex)
 	}
 }
 
-void GLInstancingRenderer::updateShape(int shapeIndex, const float* vertices)
+void GLInstancingRenderer::updateShape(int shapeIndex, const float* vertices, int numVertices)
 {
 	b3GraphicsInstance* gfxObj = m_graphicsInstances[shapeIndex];
 	int numvertices = gfxObj->m_numVertices;
+	b3Assert(numvertices == numVertices);
+	if (numvertices != numVertices)
+		return;
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_data->m_vbo);
 	int vertexStrideInBytes = 9 * sizeof(float);
@@ -1299,6 +1300,7 @@ void GLInstancingRenderer::InitShaders()
 	useShadow_lightPosIn = glGetUniformLocation(useShadowMapInstancingShader, "lightPosIn");
 	useShadow_cameraPositionIn = glGetUniformLocation(useShadowMapInstancingShader, "cameraPositionIn");
 	useShadow_materialShininessIn = glGetUniformLocation(useShadowMapInstancingShader, "materialShininessIn");
+	useShadow_shadowmapIntensityIn = glGetUniformLocation(useShadowMapInstancingShader, "shadowmapIntensityIn");
 
 	createShadowMapInstancingShader = gltLoadShaderPair(createShadowMapInstancingVertexShader, createShadowMapInstancingFragmentShader);
 	glLinkProgram(createShadowMapInstancingShader);
@@ -1473,6 +1475,11 @@ void GLInstancingRenderer::setLightPosition(const float lightPos[3])
 	m_data->m_lightPos[0] = lightPos[0];
 	m_data->m_lightPos[1] = lightPos[1];
 	m_data->m_lightPos[2] = lightPos[2];
+}
+
+void GLInstancingRenderer::setShadowMapIntensity(double shadowMapIntensity)
+{
+	m_data->m_shadowmapIntensity = shadowMapIntensity;
 }
 
 void GLInstancingRenderer::setShadowMapResolution(int shadowMapResolution)
@@ -1770,7 +1777,6 @@ static void b3CreateLookAt(const b3Vector3& eye, const b3Vector3& center, const 
 	result[3 * 4 + 3] = 1.f;
 }
 
-
 void GLInstancingRenderer::drawTexturedTriangleMesh(float worldPosition[3], float worldOrientation[4], const float* vertices, int numvertices, const unsigned int* indices, int numIndices, float colorRGBA[4], int textureIndex, int vertexLayout)
 {
 	int sz = sizeof(GfxVertexFormat0);
@@ -1894,7 +1900,7 @@ void GLInstancingRenderer::drawPoints(const float* positions, const float color[
 			break;
 		}
 	}
-	
+
 	glBindVertexArray(0);
 	glPointSize(1);
 	glUseProgram(0);
@@ -2088,8 +2094,6 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
 
-	
-
 	{
 		B3_PROFILE("init");
 		init();
@@ -2147,7 +2151,7 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 			do
 			{
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16,
-					m_data->m_shadowMapWidth, m_data->m_shadowMapHeight,
+							 m_data->m_shadowMapWidth, m_data->m_shadowMapHeight,
 							 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 				err = glGetError();
 				if (err != GL_NO_ERROR)
@@ -2183,7 +2187,7 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 		//	return;
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_FRONT);  // Cull back-facing triangles -> draw only front-facing triangles
-
+		glGenerateMipmap(GL_TEXTURE_2D);
 		b3Assert(glGetError() == GL_NO_ERROR);
 	}
 	else
@@ -2346,12 +2350,20 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 				if (gfxObj->m_flags & B3_INSTANCE_TEXTURE)
 				{
 					curBindTexture = m_data->m_textureHandles[gfxObj->m_textureIndex].m_glTexture;
-
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+					glBindTexture(GL_TEXTURE_2D, curBindTexture);
 
 					if (m_data->m_textureHandles[gfxObj->m_textureIndex].m_enableFiltering)
 					{
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+						if (renderMode == B3_CREATE_SHADOWMAP_RENDERMODE)
+						{
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+						}
+						else
+						{
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+						}
+
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 					}
 					else
@@ -2363,13 +2375,12 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 				else
 				{
 					curBindTexture = m_data->m_defaultTexturehandle;
+					glBindTexture(GL_TEXTURE_2D, curBindTexture);
 				}
 
 				//disable lazy evaluation, it just leads to bugs
 				//if (lastBindTexture != curBindTexture)
-				{
-					glBindTexture(GL_TEXTURE_2D, curBindTexture);
-				}
+
 				//lastBindTexture = curBindTexture;
 
 				b3Assert(glGetError() == GL_NO_ERROR);
@@ -2483,7 +2494,7 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 								glUniform3f(regularLightDirIn, gLightDir[0], gLightDir[1], gLightDir[2]);
 
 								glUniform1i(uniform_texture_diffuse, 0);
-
+								glEnable(GL_MULTISAMPLE);
 								if (gfxObj->m_flags & B3_INSTANCE_TRANSPARANCY)
 								{
 									int instanceId = transparentInstances[i].m_instanceId;
@@ -2511,6 +2522,7 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 							{
 								glUseProgram(createShadowMapInstancingShader);
 								glUniformMatrix4fv(createShadow_depthMVP, 1, false, &depthMVP[0][0]);
+								glEnable(GL_MULTISAMPLE);
 								glDrawElementsInstanced(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, indexOffset, gfxObj->m_numGraphicsInstances);
 								break;
 							}
@@ -2561,12 +2573,14 @@ void GLInstancingRenderer::renderSceneInternal(int orgRenderMode)
 								m_data->m_activeCamera->getCameraPosition(camPos);
 								glUniform3f(useShadow_cameraPositionIn, camPos[0], camPos[1], camPos[2]);
 								glUniform1f(useShadow_materialShininessIn, gfxObj->m_materialShinyNess);
+								glUniform1f(useShadow_shadowmapIntensityIn, m_data->m_shadowmapIntensity);
 
 								glUniformMatrix4fv(useShadow_DepthBiasModelViewMatrix, 1, false, &depthBiasMVP[0][0]);
 								glActiveTexture(GL_TEXTURE1);
 								glBindTexture(GL_TEXTURE_2D, m_data->m_shadowTexture);
-								glUniform1i(useShadow_shadowMap, 1);
 
+								glUniform1i(useShadow_shadowMap, 1);
+								glEnable(GL_MULTISAMPLE);
 								//sort transparent objects
 
 								//gfxObj->m_instanceOffset
@@ -2724,6 +2738,7 @@ void GLInstancingRenderer::enableShadowMap()
 void GLInstancingRenderer::clearZBuffer()
 {
 	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_MULTISAMPLE);
 }
 
 int GLInstancingRenderer::getMaxShapeCapacity() const

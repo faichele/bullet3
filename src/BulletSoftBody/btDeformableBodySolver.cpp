@@ -239,7 +239,10 @@ void btDeformableBodySolver::reinitialize(const btAlignedObjectArray<btSoftBody*
 		m_residual[i].setZero();
 	}
 
-	m_dt = dt;
+	if (dt > 0)
+	{
+		m_dt = dt;
+	}
 	m_objective->reinitialize(nodeUpdated, dt);
 	updateSoftBodies();
 }
@@ -399,7 +402,6 @@ void btDeformableBodySolver::predictMotion(btScalar solverdt)
 		}
 	}
 	m_objective->applyExplicitForce(m_residual);
-
 	for (int i = 0; i < m_softBodies.size(); ++i)
 	{
 		btSoftBody* psb = m_softBodies[i];

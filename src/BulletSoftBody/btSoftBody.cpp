@@ -222,7 +222,7 @@ void btSoftBody::initDefaults()
 	m_windVelocity = btVector3(0, 0, 0);
 	m_restLengthScale = btScalar(1.0);
 	m_dampingCoefficient = 1.0;
-	m_sleepingThreshold = .4;
+	m_sleepingThreshold = .04;
 	m_useSelfCollision = false;
 	m_collisionFlags = 0;
 	m_softSoftCollision = false;
@@ -2779,8 +2779,6 @@ bool btSoftBody::checkDeformableContact(const btCollisionObjectWrapper* colObjWr
 		cti.m_colObj = colObjWrap->getCollisionObject();
 		cti.m_normal = wtr.getBasis() * nrm;
 		cti.m_offset = dst;
-		cti.m_normal.normalize();
-		cti.m_offset = dst;
 	}
 	if (dst < 0)
 		return true;
@@ -3801,7 +3799,7 @@ void btSoftBody::interpolateRenderMesh()
 			const Node* p2 = m_renderNodesParents[i][2];
 			btVector3 normal = btCross(p1->m_x - p0->m_x, p2->m_x - p0->m_x);
 			btVector3 unit_normal = normal.normalized();
-			Node& n = m_renderNodes[i];
+			RenderNode& n = m_renderNodes[i];
 			n.m_x.setZero();
 			for (int j = 0; j < 3; ++j)
 			{
@@ -3814,7 +3812,7 @@ void btSoftBody::interpolateRenderMesh()
 	{
 		for (int i = 0; i < m_renderNodes.size(); ++i)
 		{
-			Node& n = m_renderNodes[i];
+			RenderNode& n = m_renderNodes[i];
 			n.m_x.setZero();
 			for (int j = 0; j < 4; ++j)
 			{
