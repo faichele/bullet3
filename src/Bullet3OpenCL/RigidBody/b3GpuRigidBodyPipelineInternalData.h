@@ -32,18 +32,22 @@ subject to the following restrictions:
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
 #include "Bullet3OpenCL/RigidBody/b3CpuPushPullBehaviourApplication.h"
 
+#include "Utils/b3Clock.h"
+
 struct b3GpuRigidBodyPipelineInternalData
 {
 	cl_context m_context;
 	cl_device_id m_device;
 	cl_command_queue m_queue;
 
+	b3Clock m_clock;
+
 	cl_kernel m_integrateTransformsKernel;
 	cl_kernel m_updateAabbsKernel;
 	cl_kernel m_clearOverlappingPairsKernel;
-	
+
 	cl_kernel m_markGhostObjectPairsKernel;
-	// cl_kernel m_applyPushPullImpulsesKernel;
+	cl_kernel m_processPushPullImpulsesKernel;
 
 	class b3PgsJacobiSolver* m_solver;
 
@@ -79,7 +83,9 @@ struct b3GpuRigidBodyPipelineInternalData
 	b3AlignedObjectArray<b3BroadphasePair> m_overlappingPairsCPU;
 
 	b3AlignedObjectArray<b3Contact4> m_hostContacts;
-	
+
+	cl_mem m_overlappingPairs;
+
 	b3OpenCLArray<b3GpuGenericConstraint>* m_gpuConstraints;
 	b3AlignedObjectArray<b3GpuGenericConstraint> m_cpuConstraints;
 

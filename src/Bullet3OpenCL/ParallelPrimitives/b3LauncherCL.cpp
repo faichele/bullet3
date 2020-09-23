@@ -60,7 +60,7 @@ void b3LauncherCL::setBuffer(cl_mem clBuffer)
 		m_serializationSizeInBytes += sizeof(b3KernelArgData);
 		m_serializationSizeInBytes += param_value;
 	}
-	// std::cout << "setBuffer(" << m_idx << ")" << std::endl;
+	// DEBUG_OUTPUT(std::cout << "setBuffer(" << m_idx << ")" << std::endl);
 	cl_int status = clSetKernelArg(m_kernel, m_idx++, sizeof(cl_mem), &clBuffer);
 	b3Assert(status == CL_SUCCESS);
 }
@@ -94,7 +94,7 @@ void b3LauncherCL::setBuffers(b3BufferInfoCL* buffInfo, int n)
 			m_serializationSizeInBytes += sizeof(b3KernelArgData);
 			m_serializationSizeInBytes += param_value;
 		}
-		// std::cout << "setBuffers(" << m_idx << ")" << std::endl;
+		// DEBUG_OUTPUT(std::cout << "setBuffers(" << m_idx << ")" << std::endl);
 		cl_int status = clSetKernelArg(m_kernel, m_idx++, sizeof(cl_mem), &buffInfo[i].m_clBuffer);
 		b3Assert(status == CL_SUCCESS);
 	}

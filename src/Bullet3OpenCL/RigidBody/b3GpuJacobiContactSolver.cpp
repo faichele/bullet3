@@ -135,10 +135,10 @@ b3GpuJacobiContactSolver::~b3GpuJacobiContactSolver()
 
 void b3GpuJacobiContactSolver::setPushPullBehaviorData(const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& ppBehaviors, const b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& ppVelocities)
 {
-	std::cout << "b3GpuJacobiContactSolver::setPushPullBehaviorData(): " << ppBehaviors.size() << " behaviors." << std::endl;
+	DEBUG_OUTPUT(std::cout << "b3GpuJacobiContactSolver::setPushPullBehaviorData(): " << ppBehaviors.size() << " behaviors." << std::endl);
 	for (int k = 0; k < ppBehaviors.size(); ++k)
 	{
-		std::cout << " - Behavior " << k << ": body ID " << ppBehaviors[k].m_bodyID << ", ghost object ID " << ppBehaviors[k].m_ghostObjectID << std::endl;
+		DEBUG_OUTPUT(std::cout << " - Behavior " << k << ": body ID " << ppBehaviors[k].m_bodyID << ", ghost object ID " << ppBehaviors[k].m_ghostObjectID << std::endl);
 	}
 	m_data->m_pushPullBehaviors->copyFromHost(ppBehaviors);
 	m_data->m_pushPullVelocities->copyFromHost(ppVelocities);
@@ -593,23 +593,23 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 {
 	B3_PROFILE("b3GpuJacobiContactSolver::solveGroup");
 
-	std::cout << "=== b3GpuJacobiContactSolver::solveGroupHost(): " << numBodies << " bodies, " << numManifolds << " contact manifolds. ===" << std::endl;
+	DEBUG_OUTPUT(std::cout << "=== b3GpuJacobiContactSolver::solveGroupHost(): " << numBodies << " bodies, " << numManifolds << " contact manifolds. ===" << std::endl);
 
 	m_data->m_bodyCountCPU.clear();
 	m_data->m_bodyCountCPU.resize(numBodies);
 	for (int i = 0; i < numBodies; i++)
 		m_data->m_bodyCountCPU[i] = 0;
 
-	std::cout << "bodyCount array before manifolds are considered: " << std::endl;
+	DEBUG_OUTPUT(std::cout << "bodyCount array before manifolds are considered: " << std::endl);
 	for (int i = 0; i < numBodies; i++)
-		std::cout << " " << i << ": " << m_data->m_bodyCountCPU[i] << std::endl;
+		DEBUG_OUTPUT(std::cout << " " << i << ": " << m_data->m_bodyCountCPU[i] << std::endl);
 
 	m_data->m_numHostContacts = numManifolds;
 
 	m_data->m_contactConstraintOffsetsCPU.clear();
 	m_data->m_contactConstraintOffsetsCPU.resize(numManifolds);
 
-	std::cout << "Computing contactConstraintOffsets and bodyCount's..." << std::endl;
+	DEBUG_OUTPUT(std::cout << "Computing contactConstraintOffsets and bodyCount's..." << std::endl);
 	for (int i = 0; i < numManifolds; i++)
 	{
 		int pa = manifoldPtr[i].m_bodyAPtrAndSignBit;
@@ -633,27 +633,27 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 		}
 	}
 
-	std::cout << "Computing offsetSplitBodies..." << std::endl;
+	DEBUG_OUTPUT(std::cout << "Computing offsetSplitBodies..." << std::endl);
 	m_data->m_offsetSplitBodiesCPU.resize(numBodies);
 	m_data->m_scan->executeHost(m_data->m_bodyCountCPU, m_data->m_offsetSplitBodiesCPU, numBodies, &m_data->m_totalNumSplitBodiesCPU);
 	int numlastBody = m_data->m_bodyCountCPU[numBodies - 1];
 	m_data->m_totalNumSplitBodiesCPU += numlastBody;
-	std::cout << "totalNumSplitBodies = " << m_data->m_totalNumSplitBodiesCPU << std::endl;
+	DEBUG_OUTPUT(std::cout << "totalNumSplitBodies = " << m_data->m_totalNumSplitBodiesCPU << std::endl);
 
-	std::cout << "bodyCount array after manifolds are considered: " << std::endl;
+	DEBUG_OUTPUT(std::cout << "bodyCount array after manifolds are considered: " << std::endl);
 	for (int i = 0; i < numBodies; i++)
-		std::cout << " " << i << ": " << m_data->m_bodyCountCPU[i] << std::endl;
+		DEBUG_OUTPUT(std::cout << " " << i << ": " << m_data->m_bodyCountCPU[i] << std::endl);
 
-	std::cout << std::endl;
+	DEBUG_OUTPUT(std::cout << std::endl);
 
-	std::cout << "contactConstraintOffsets array: " << std::endl;
+	DEBUG_OUTPUT(std::cout << "contactConstraintOffsets array: " << std::endl);
 	for (int i = 0; i < numManifolds; i++)
-		std::cout << " " << i << ": x = " << m_data->m_contactConstraintOffsetsCPU[i].x << ", y = " << m_data->m_contactConstraintOffsetsCPU[i].y << std::endl;
+		DEBUG_OUTPUT(std::cout << " " << i << ": x = " << m_data->m_contactConstraintOffsetsCPU[i].x << ", y = " << m_data->m_contactConstraintOffsetsCPU[i].y << std::endl);
 
 	m_data->m_contactConstraintsCPU.clear();
 	m_data->m_contactConstraintsCPU.resize(numManifolds);
 
-	std::cout << "ContactToConstraintKernel for " << numManifolds << "contact manifolds..." << std::endl;
+	DEBUG_OUTPUT(std::cout << "ContactToConstraintKernel for " << numManifolds << "contact manifolds..." << std::endl);
 	for (int i = 0; i < numManifolds; i++)
 	{
 		ContactToConstraintKernel(&manifoldPtr[0], bodies, inertias, &m_data->m_contactConstraintsCPU[0], numManifolds,
@@ -670,7 +670,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	m_data->m_deltaLinearVelocitiesCPU.resize(m_data->m_totalNumSplitBodiesCPU);
 	m_data->m_deltaAngularVelocitiesCPU.resize(m_data->m_totalNumSplitBodiesCPU);
 
-	std::cout << "Zero-ing velocity delta vectors: " << m_data->m_totalNumSplitBodiesCPU << std::endl;
+	DEBUG_OUTPUT(std::cout << "Zero-ing velocity delta vectors: " << m_data->m_totalNumSplitBodiesCPU << std::endl);
 	for (unsigned int i = 0; i < m_data->m_totalNumSplitBodiesCPU; i++)
 	{
 		m_data->m_deltaLinearVelocitiesCPU[i].setZero();
@@ -678,7 +678,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	}
 
 	// Resolve contacts
-	std::cout << "Resolving contacts: " << numManifolds << " contact manifolds, " << maxIter << " iterations." << std::endl;
+	DEBUG_OUTPUT(std::cout << "Resolving contacts: " << numManifolds << " contact manifolds, " << maxIter << " iterations." << std::endl);
 	for (int iter = 0; iter < maxIter; iter++)
 	{
 		for (int i = 0; i < numManifolds; i++)
@@ -725,7 +725,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 			}
 		}
 
-		std::cout << "averageVelocities 1 " << iter << std::endl;
+		DEBUG_OUTPUT(std::cout << "averageVelocities 1 " << iter << std::endl);
 		// Average body velocities, round 1
 		for (int i = 0; i < numBodies; i++)
 		{
@@ -757,7 +757,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 	for (int iter = 0; iter < maxIter; iter++)
 	{
 		//solve friction
-		std::cout << "solveFriction " << iter << std::endl;
+		DEBUG_OUTPUT(std::cout << "solveFriction " << iter << std::endl);
 		for (int i = 0; i < numManifolds; i++)
 		{
 			float maxRambdaDt[4] = {FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX};
@@ -814,7 +814,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 						  i, pushPullBehaviors, pushPullVelocities, ppMap);
 		}
 
-		std::cout << "averageVelocities 2 " << iter << std::endl;
+		DEBUG_OUTPUT(std::cout << "averageVelocities 2 " << iter << std::endl);
 		// Average body velocities, round 2
 		for (int i = 0; i < numBodies; i++)
 		{
@@ -859,13 +859,14 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 }
 
 void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
-											 b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
+											 cl_mem pushPullVelocities)
+											 //b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
 {
 	b3JacobiSolverInfo solverInfo;
 	solverInfo.m_fixedBodyIndex = static0Index;
 
-	std::cout << "Push-pull behaviours count           : " << pushPullBehaviours.size() << std::endl;
-	std::cout << "Push-pull behaviours velocities count: " << pushPullVelocities.size() << std::endl;
+	// DEBUG_OUTPUT(std::cout << "Push-pull behaviours count           : " << pushPullBehaviours.size() << std::endl);
+	// DEBUG_OUTPUT(std::cout << "Push-pull behaviours velocities count: " << pushPullVelocities.size() << std::endl);
 
 	B3_PROFILE("b3GpuJacobiContactSolver::solveGroup");
 	int numManifolds = numContacts;
@@ -966,9 +967,9 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 			launcher.setConst(solverInfo.m_fixedBodyIndex);
 			launcher.setConst(numManifolds);
 
-			launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
-			launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
-			launcher.setConst(pushPullBehaviours.size());
+			// launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
+			// launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
+			// launcher.setConst(pushPullBehaviours.size());
 
 			launcher.launch1D(numManifolds);
 			clFinish(m_queue);
@@ -1003,9 +1004,11 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 			launcher.setConst(solverInfo.m_fixedBodyIndex);
 			launcher.setConst(numManifolds);
 
-			launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
-			launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
-			launcher.setConst(pushPullBehaviours.size());
+			// launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
+			// launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
+			// launcher.setConst(pushPullBehaviours.size());
+			launcher.setConst(numBodies);
+			launcher.setBuffer(pushPullVelocities);
 
 			launcher.launch1D(numManifolds);
 			clFinish(m_queue);
@@ -1028,10 +1031,10 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 	b3AlignedObjectArray<b3RigidBodyBehaviorVelocities> ppVelocitiesPerContact;
 	m_data->m_pushPullVelocities->copyToHost(ppVelocitiesPerContact, true);
 
-	std::cout << "ppVelocitiesPerContact size: " << ppVelocitiesPerContact.size() << std::endl;
+	DEBUG_OUTPUT(std::cout << "ppVelocitiesPerContact size: " << ppVelocitiesPerContact.size() << std::endl);
 	for (int k = 0; k < ppVelocitiesPerContact.size(); ++k)
 	{
-		std::cout << " - " << k << ": linear = (" << ppVelocitiesPerContact[k].m_linearVel.x << ", " << ppVelocitiesPerContact[k].m_linearVel.y << ", " << ppVelocitiesPerContact[k].m_linearVel.z << ")" << std::endl;
+		DEBUG_OUTPUT(std::cout << " - " << k << ": linear = (" << ppVelocitiesPerContact[k].m_linearVel.x << ", " << ppVelocitiesPerContact[k].m_linearVel.y << ", " << ppVelocitiesPerContact[k].m_linearVel.z << ")" << std::endl);
 	}
 
 	{
@@ -1043,8 +1046,8 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 		launcher.setBuffer(m_data->m_deltaLinearVelocities->getBufferCL());
 		launcher.setBuffer(m_data->m_deltaAngularVelocities->getBufferCL());
 
-		std::cout << "numBodies = " << numBodies << ", ppVelocitiesPerContact.size() = " << ppVelocitiesPerContact.size() << std::endl;
-		std::cout << "=====================================================================" << std::endl;
+		DEBUG_OUTPUT(std::cout << "numBodies = " << numBodies << ", ppVelocitiesPerContact.size() = " << ppVelocitiesPerContact.size() << std::endl);
+		DEBUG_OUTPUT(std::cout << "=====================================================================" << std::endl);
 		launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
 		launcher.setConst(numBodies);
 

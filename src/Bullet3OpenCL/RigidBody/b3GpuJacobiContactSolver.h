@@ -12,6 +12,8 @@
 
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
 
+#include "Utils/b3Clock.h"
+
 #include <vector>
 #include <map>
 
@@ -44,6 +46,8 @@ protected:
 	cl_device_id m_device;
 	cl_command_queue m_queue;
 
+	b3Clock m_clock;
+
 public:
 	b3GpuJacobiContactSolver(cl_context ctx, cl_device_id device, cl_command_queue queue, int pairCapacity);
 	virtual ~b3GpuJacobiContactSolver();
@@ -51,7 +55,9 @@ public:
 	void setPushPullBehaviorData(const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>&, const b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>&);
 
 	void solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
-					   b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
+					   cl_mem pushPullVelocities);
+
+					   //b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities);
 	void solveGroupHost(b3RigidBodyData* bodies, b3InertiaData* inertias, int numBodies, struct b3Contact4* manifoldPtr, int numManifolds, const b3JacobiSolverInfo& solverInfo, 
 		b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities, const std::map<int, std::vector<int>>& ppMap);
 

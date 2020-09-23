@@ -1,4 +1,6 @@
-INCLUDE_DIRECTORIES( ${BULLET_PHYSICS_SOURCE_DIR}/src  )
+INCLUDE_DIRECTORIES(
+	${BULLET_PHYSICS_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/../../examples)
 
 ADD_DEFINITIONS(-DB3_USE_CLEW)
 
@@ -33,13 +35,12 @@ SET(Bullet3OpenCL_clew_SRCS
 	RigidBody/b3GpuRigidBodyPipeline.cpp
 	RigidBody/b3Solver.cpp
 	RigidBody/b3CpuPushPullBehaviourApplication.cpp
+	../../examples/Utils/b3Clock.cpp
 )
-
 
 SET(Bullet3OpenCL_clew_HDRS
 #	${Root_HDRS}
 )
-
 
 ADD_LIBRARY(Bullet3OpenCL_clew ${Bullet3OpenCL_clew_SRCS} ${Bullet3OpenCL_clew_HDRS})
 SET_TARGET_PROPERTIES(Bullet3OpenCL_clew PROPERTIES VERSION ${BULLET_VERSION})

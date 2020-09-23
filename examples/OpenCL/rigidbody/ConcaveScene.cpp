@@ -216,7 +216,7 @@ bool ConcaveScene::mouseMoveCallback(float x, float y)
 					cameraDistance = m_maxCameraDistance;
 			}
 
-			std::cout << "CameraDistance: " << cameraDistance << std::endl;
+			DEBUG_OUTPUT(std::cout << "CameraDistance: " << cameraDistance << std::endl);
 			camera->setCameraDistance(cameraDistance);
 			camera->setCameraPitch(pitch);
 			camera->setCameraYaw(yaw);
@@ -249,16 +249,16 @@ bool ConcaveScene::mouseButtonCallback(int button, int state, float x, float y)
 
 void ConcaveScene::renderScene()
 {
-	std::cout << "Graphics instances in scene: " << m_instancingRenderer->getTotalNumInstances() << std::endl;
-	std::cout << "Rigid objects in scene     : " << m_data->m_rigidBodyPipeline->getNumBodies() << std::endl;
-	physicsDebugDraw(0);
+	DEBUG_OUTPUT(std::cout << "Graphics instances in scene: " << m_instancingRenderer->getTotalNumInstances() << std::endl);
+	DEBUG_OUTPUT(std::cout << "Rigid objects in scene     : " << m_data->m_rigidBodyPipeline->getNumBodies() << std::endl);
+	//physicsDebugDraw(0);
 	GpuRigidBodyDemo::renderScene();
 }
 
 void ConcaveScene::physicsDebugDraw(int debugFlags)
 {
 	unsigned int numContactPoints = m_data->m_rigidBodyPipeline->getNumContacts();
-	std::cout << "Contact point count: " << numContactPoints << std::endl;
+	DEBUG_OUTPUT(std::cout << "Contact point count: " << numContactPoints << std::endl);
 
 	btVector3 defaultContactColor(0.8, 0.4, 0.4);
 	btVector3 ghostContactColor(0.4, 0.8, 0.4);
@@ -297,7 +297,7 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 						ghostContact = true;
 				}
 
-				// std::cout << "Draw contact point at: (" << posB.x() << ", " << posB.y() << ", " << posB.z() << "); normal: (" << normalOnB.x() << ", " << normalOnB.y() << ", " << normalOnB.z() << "); distance: " << dist << std::endl;
+				// DEBUG_OUTPUT(std::cout << "Draw contact point at: (" << posB.x() << ", " << posB.y() << ", " << posB.z() << "); normal: (" << normalOnB.x() << ", " << normalOnB.y() << ", " << normalOnB.z() << "); distance: " << dist << std::endl);
 
 				if (ghostContact)
 					m_debugDrawer->drawContactPoint(posB, normalOnB, dist, 1, ghostContactColor);
@@ -308,7 +308,7 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 	}
 
 	int numRigidBodies = m_data->m_rigidBodyPipeline->getNumBodies();
-	std::cout << "Rigid body count: " << numRigidBodies << std::endl;
+	DEBUG_OUTPUT(std::cout << "Rigid body count: " << numRigidBodies << std::endl);
 	const struct b3RigidBodyData* rigidBodies = m_data->m_np->getBodiesCpu();
 
 	for (int k = 0; k < numRigidBodies; ++k)
@@ -323,10 +323,10 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 	}
 
 	const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviors = m_data->m_rigidBodyPipeline->getPushPullBehaviors();
-	std::cout << "Push-pull behaviors count: " << pushPullBehaviors.size() << std::endl;
+	DEBUG_OUTPUT(std::cout << "Push-pull behaviors count: " << pushPullBehaviors.size() << std::endl);
 	for (size_t m = 0; m < pushPullBehaviors.size(); ++m)
 	{
-		std::cout << "Debug draw push-pull behavior: " << m << std::endl;
+		DEBUG_OUTPUT(std::cout << "Debug draw push-pull behavior: " << m << std::endl);
 		if (pushPullBehaviors[m].m_bodyID < numRigidBodies && pushPullBehaviors[m].m_bodyID >= 0)
 		{
 			btVector3 dirStart(rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.x + pushPullBehaviors[m].m_bodyPosition.x, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.y + pushPullBehaviors[m].m_bodyPosition.y + 1.0f, rigidBodies[pushPullBehaviors[m].m_bodyID].m_pos.z + pushPullBehaviors[m].m_bodyPosition.z);
@@ -341,7 +341,7 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 			endTf.setRotation(bodyOrientation);
 			m_debugDrawer->drawCone(0.5, 0.5, 1, endTf, pushPullColor);*/
 
-			std::cout << " With rigid body ID: " << pushPullBehaviors[m].m_bodyID << " drawn from (" << dirStart.x() << "," << dirStart.y() << "," << dirStart.z() << ") to (" << dirEnd.x() << "," << dirEnd.y() << "," << dirEnd.z() << ")" << std::endl;
+			DEBUG_OUTPUT(std::cout << " With rigid body ID: " << pushPullBehaviors[m].m_bodyID << " drawn from (" << dirStart.x() << "," << dirStart.y() << "," << dirStart.z() << ") to (" << dirEnd.x() << "," << dirEnd.y() << "," << dirEnd.z() << ")" << std::endl);
 		}
 	}
 
@@ -389,7 +389,7 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 		b3AlignedObjectArray<unsigned int>& offsetSplitBodies = jacobiCs->getOffsetSplitBodiesCPU();
 		b3AlignedObjectArray<b3GpuConstraint4>& contactConstraints = jacobiCs->getContactConstraintsCPU();
 		b3AlignedObjectArray<b3Contact4>& contactManifolds = m_data->m_rigidBodyPipeline->getHostContacts();
-		std::cout << "DebugDraw contact manifolds: " << numContactManifolds << std::endl;
+		DEBUG_OUTPUT(std::cout << "DebugDraw contact manifolds: " << numContactManifolds << std::endl);
 
 		for (int k = 0; k < numContactManifolds; ++k)
 		{
@@ -430,13 +430,13 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 				btVector3 contactPosA(contactConstraints[k].m_worldPos[4].x, contactConstraints[k].m_worldPos[4].y, contactConstraints[k].m_worldPos[4].z);
 				btVector3 manifoldCenterA(contactConstraints[k].m_center.x, contactConstraints[k].m_center.y, contactConstraints[k].m_center.z);
 
-				std::cout << "Manifold " << k << " bodyA (" << contactConstraints[k].m_bodyA << "): contactPos = (" << contactPosA.x() << ", " << contactPosA.y() << ", " << contactPosA.z() << ")" << std::endl
+				DEBUG_OUTPUT(std::cout << "Manifold " << k << " bodyA (" << contactConstraints[k].m_bodyA << "): contactPos = (" << contactPosA.x() << ", " << contactPosA.y() << ", " << contactPosA.z() << ")" << std::endl
 						  << "manifoldCenter = (" << manifoldCenterA.x() << ", " << manifoldCenterA.y() << ", " << manifoldCenterA.z() << ")" << std::endl
 						  << "dLinVel = (" << dlvA.x() << ", " << dlvA.y() << ", " << dlvA.z() << ")" << std::endl
 						  << "dAngVel = (" << davA.x() << ", " << davA.y() << ", " << davA.z() << ")"
-						  << std::endl;
+						  << std::endl);
 
-				std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl;
+				DEBUG_OUTPUT(std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl);
 				for (int m = 0; m < contactManifolds[k].getNPoints() - 1; ++m)
 				{
 					btVector3 pt1(contactManifolds[k].m_worldPosB[m].x, contactManifolds[k].m_worldPosB[m].y, contactManifolds[k].m_worldPosB[m].z);
@@ -463,13 +463,13 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 				btVector3 contactPosB(contactConstraints[k].m_worldPos[4].x, contactConstraints[k].m_worldPos[4].y, contactConstraints[k].m_worldPos[4].z);
 				btVector3 manifoldCenterB(contactConstraints[k].m_center.x, contactConstraints[k].m_center.y, contactConstraints[k].m_center.z);
 
-				std::cout << "Manifold " << k << " bodyB (" << contactConstraints[k].m_bodyB << "): contactPos = (" << contactPosB.x() << ", " << contactPosB.y() << ", " << contactPosB.z() << ")" << std::endl
+				DEBUG_OUTPUT(std::cout << "Manifold " << k << " bodyB (" << contactConstraints[k].m_bodyB << "): contactPos = (" << contactPosB.x() << ", " << contactPosB.y() << ", " << contactPosB.z() << ")" << std::endl
 						  << "manifoldCenter = (" << manifoldCenterB.x() << ", " << manifoldCenterB.y() << ", " << manifoldCenterB.z() << ")" << std::endl
 						  << "dLinVel = (" << dlvB.x() << ", " << dlvB.y() << ", " << dlvB.z() << ")" << std::endl
 						  << "dAngVel = (" << davB.x() << ", " << davB.y() << ", " << davB.z() << ")"
-						  << std::endl;
+						  << std::endl);
 
-				std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl;
+				DEBUG_OUTPUT(std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl);
 				for (int m = 0; m < contactManifolds[k].getNPoints() - 1; ++m)
 				{
 					btVector3 pt1(contactManifolds[k].m_worldPosB[m].x, contactManifolds[k].m_worldPosB[m].y, contactManifolds[k].m_worldPosB[m].z);
@@ -506,27 +506,43 @@ void ConcaveScene::exitPhysics()
 	GpuRigidBodyDemo::exitPhysics();
 }
 
-#define CONCAVE_SCENE_SINGLE_CUBE_TEST
+#define CONCAVE_SCENE_CUBE_TEST
 //#define CONCAVE_SCENE_CONVEYOR_TEST_SMALL
 //#define CONCAVE_SCENE_CONVEYOR_TEST_LARGE
 
 void ConcaveScene::setupScene()
 {
 	const char* fileName = "cube.obj";  //"samurai_monastry.obj";
+	const char* fileName_walls = "freefall_test_frame.obj";
 
 	int graphicsId = -1, physicsId = -1;
 
-#ifdef CONCAVE_SCENE_SINGLE_CUBE_TEST
+#ifdef CONCAVE_SCENE_CUBE_TEST
 	b3Mat3x3 tmp;
 	tmp.setEulerZYX(0, 0, 0);
 	b3Quaternion orientation_plane;
 	tmp.getRotation(orientation_plane);
 	b3Vector3 position_plane = b3MakeVector3(0, -1, 0);
-	b3Vector4 scaling_plane = b3MakeVector4(250, 5, 250, 1);
+	b3Vector4 scaling_plane = b3MakeVector4(1000, 5, 1000, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane);
 
+	b3Vector3 position_walls = b3MakeVector3(0, 0, 0);
+	tmp.setEulerZYX(0, 0, 0);
+	tmp.getRotation(orientation_plane);
+	b3Vector4 scaling_walls = b3MakeVector4(8.0, 25, 8.0, 1);
+	createConcaveMesh(graphicsId, physicsId, fileName_walls, position_walls, orientation_plane, scaling_walls);
+
+	b3Vector3 trVel1 = b3MakeVector3(0, 0, 0);
+	b3Vector3 rotVel1 = b3MakeVector3(0, 8.0, 0);
+
+	b3Vector3 trAcc1 = b3MakeVector3(0, 0, -1.0);
+	b3Vector3 rotAcc1 = b3MakeVector3(0, 1.0, 0);
+
+	m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, trAcc1, rotAcc1, position_plane, orientation_plane, true);
+	m_ghostObjectColIndices.push_back(physicsId);
+
 	// TODO: Fix application of gravity when NO ghost object is present in the simulation!
-	b3Vector3 position_plane_ghost = b3MakeVector3(0, -0.5, 0);
+	/*b3Vector3 position_plane_ghost = b3MakeVector3(0, -0.5, 0);
 	if (createConcaveMesh(graphicsId, physicsId, fileName, position_plane_ghost, orientation_plane, scaling_plane, true, 0.0f, 1))
 	{
 		b3Vector3 trVel1 = b3MakeVector3(0, 0, -1.0);
@@ -537,13 +553,13 @@ void ConcaveScene::setupScene()
 
 		m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, trAcc1, rotAcc1, position_plane, orientation_plane, true);
 		m_ghostObjectColIndices.push_back(physicsId);
-	}
+	}*/
 
 	b3Vector3 objects_origin = b3MakeVector3(0, 0, 1);
 	float cube_scale = 0.75f;
-	createDynamicObjects(objects_origin, 8, 2, 1, cube_scale * 4.0f, cube_scale * 4.0f, cube_scale * 4.0f, true, cube_scale);
+	createDynamicObjects(objects_origin, 20, 50, 20, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
 
-	std::cout << "Created dynamic objects." << std::endl;
+	DEBUG_OUTPUT(std::cout << "Created dynamic objects." << std::endl);
 #endif
 
 #ifdef CONCAVE_SCENE_CONVEYOR_TEST_SMALL
@@ -668,7 +684,7 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 			for (size_t l = 0; l < numIndices; ++l)
 			{
 				const float vtx = attribs.vertices.at(shape.mesh.indices.at(l).vertex_index);
-				std::cout << "Vertex coord. at index: " << shape.mesh.indices.at(l).vertex_index << ": " << vtx << std::endl;
+				DEBUG_OUTPUT(std::cout << "Vertex coord. at index: " << shape.mesh.indices.at(l).vertex_index << ": " << vtx << std::endl);
 			}
 		}
 		std::cout << "======================================================================" << std::endl;
@@ -801,16 +817,16 @@ void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigne
 
 	/*for (int k = 0; k < 10; ++k)
 	{*/
-	std::cout << "Creating dynamic objects: " << (arraySizeX * arraySizeY * arraySizeZ) << std::endl;
+	DEBUG_OUTPUT(std::cout << "Creating dynamic objects: " << (arraySizeX * arraySizeY * arraySizeZ) << std::endl);
 	for (int i = 0; i < arraySizeX; i++)
 	{
-		std::cout << "Row X-dir: " << i << std::endl;
+		DEBUG_OUTPUT(std::cout << "Row X-dir: " << i << std::endl);
 		for (int j = 0; j < arraySizeY; j++)
 		{
-			std::cout << "Row Y-dir: " << j << std::endl;
+			DEBUG_OUTPUT(std::cout << "Row Y-dir: " << j << std::endl);
 			for (int k = 0; k < arraySizeZ; k++)
 			{
-				std::cout << "Row Z-dir: " << k << std::endl;
+				DEBUG_OUTPUT(std::cout << "Row Z-dir: " << k << std::endl);
 
 				/*b3Vector3 position = b3MakeVector3(objects_origin.x,
 												   objects_origin.y,
@@ -820,7 +836,7 @@ void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigne
 												   objects_origin.y + (j * objectDistanceY),
 												   objects_origin.z + (k * objectDistanceZ));
 
-				std::cout << "Object " << (i + j + k) << " position: (" << position.x << "," << position.y << "," << position.z << ")" << std::endl;
+				DEBUG_OUTPUT(std::cout << "Object " << (i + j + k) << " position: (" << position.x << "," << position.y << "," << position.z << ")" << std::endl);
 
 				b3Quaternion orn(0, 0, 0, 1);
 

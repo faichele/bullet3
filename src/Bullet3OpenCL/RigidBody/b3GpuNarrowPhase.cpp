@@ -810,7 +810,7 @@ cl_mem b3GpuNarrowPhase::getContactsGpu()
 const b3Contact4* b3GpuNarrowPhase::getContactsCPU() const
 {
 	m_data->m_pBufContactBuffersGPU[m_data->m_currentContactBuffer]->copyToHost(*m_data->m_pBufContactOutCPU);
-	return &m_data->m_pBufContactOutCPU->at(0);
+	return ((m_data->m_pBufContactOutCPU->size() > 0) ? &m_data->m_pBufContactOutCPU->at(0) : nullptr);
 }
 
 void b3GpuNarrowPhase::computeContacts(cl_mem broadphasePairs, int numBroadphasePairs, cl_mem aabbsWorldSpace, int numObjects)

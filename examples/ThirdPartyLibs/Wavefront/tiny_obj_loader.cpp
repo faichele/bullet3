@@ -367,7 +367,7 @@ std::string LoadMtl(
 	std::ifstream ifs(filepath.c_str());
 	if (!ifs)
 	{
-		err << "Cannot open file [" << filepath << "]" << std::endl;
+		err << "Cannot open file [" << filepath << "]" << std::endl);
 		return err.str();
 	}
 #else
@@ -617,7 +617,7 @@ LoadObj(
 	std::ifstream ifs(filename);
 	if (!ifs)
 	{
-		err << "Cannot open file [" << filename << "]" << std::endl;
+		err << "Cannot open file [" << filename << "]" << std::endl);
 		return err.str();
 	}
 #else

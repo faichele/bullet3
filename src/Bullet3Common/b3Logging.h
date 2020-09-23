@@ -16,12 +16,18 @@ extern "C"
 	//#define b3Printf(...)
 #define b3Warning(...) do{	b3OutputWarningMessageVarArgsInternal("b3Warning[%s,%d]:\n", __FILE__, __LINE__);b3OutputWarningMessageVarArgsInternal(__VA_ARGS__);} while (0)
 #define b3Error(...)do	{b3OutputErrorMessageVarArgsInternal("b3Error[%s,%d]:\n", __FILE__, __LINE__);b3OutputErrorMessageVarArgsInternal(__VA_ARGS__);} while (0)
+
+#ifdef B3_VERBOSE_OUTPUT
+#define DEBUG_OUTPUT(x) ((x))
+#else
+#define DEBUG_OUTPUT(x) do {} while (0)
+#endif
+
 #ifndef B3_NO_PROFILE
 
 	void b3EnterProfileZone(const char* name);
 	void b3LeaveProfileZone();
 #ifdef __cplusplus
-
 	class b3ProfileZone
 	{
 	public:

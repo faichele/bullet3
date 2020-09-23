@@ -665,7 +665,7 @@ cl_program b3OpenCLUtils_compileCLProgramFromString(cl_context clContext, cl_dev
 			{
 				char workingDirectory[MAX_PATH];
 				GetCurrentDirectoryA(MAX_PATH, workingDirectory);
-				std::cout << workingDirectory << std::endl;
+				DEBUG_OUTPUT(std::cout << workingDirectory << std::endl);
 
 				HANDLE srcFileHandle = CreateFileA(clFileNameForCaching, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -678,7 +678,7 @@ cl_program b3OpenCLUtils_compileCLProgramFromString(cl_context clContext, cl_dev
 						sprintf(relativeFileName, "%s%s%s", workingDirectory, prefix[i], clFileNameForCaching);
 						std::string clFileName(relativeFileName);
 						std::replace(clFileName.begin(), clFileName.end(), '/', '\\');
-						std::cout << "Looking for CL source file name: " << clFileName << std::endl;
+						DEBUG_OUTPUT(std::cout << "Looking for CL source file name: " << clFileName << std::endl);
 						srcFileHandle = CreateFileA(clFileName.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 					}
 				}

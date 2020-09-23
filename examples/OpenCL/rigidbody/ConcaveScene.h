@@ -1,6 +1,8 @@
 #ifndef CONCAVE_SCENE_H
 #define CONCAVE_SCENE_H
 
+#include "Bullet3Common/b3Logging.h"
+
 #include "GpuRigidBodyDemo.h"
 #include "Bullet3Common/b3Vector3.h"
 #include "Bullet3Common/b3Quaternion.h"
