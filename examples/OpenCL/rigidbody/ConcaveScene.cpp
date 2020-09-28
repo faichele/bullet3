@@ -532,11 +532,11 @@ void ConcaveScene::setupScene()
 	b3Vector4 scaling_walls = b3MakeVector4(8.0, 25, 8.0, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName_walls, position_walls, orientation_plane, scaling_walls);
 
-	b3Vector3 trVel1 = b3MakeVector3(0, 0, 0);
-	b3Vector3 rotVel1 = b3MakeVector3(0, 8.0, 0);
+	b3Vector3 trVel1 = b3MakeVector3(200.0, 0, 0);
+	b3Vector3 rotVel1 = b3MakeVector3(0, 0, 0);
 
-	b3Vector3 trAcc1 = b3MakeVector3(0, 0, -1.0);
-	b3Vector3 rotAcc1 = b3MakeVector3(0, 1.0, 0);
+	b3Vector3 trAcc1 = b3MakeVector3(0, 0, 0);
+	b3Vector3 rotAcc1 = b3MakeVector3(0, 0, 0);
 
 	m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, trAcc1, rotAcc1, position_plane, orientation_plane, true);
 	m_ghostObjectColIndices.push_back(physicsId);
@@ -557,7 +557,7 @@ void ConcaveScene::setupScene()
 
 	b3Vector3 objects_origin = b3MakeVector3(0, 0, 1);
 	float cube_scale = 0.75f;
-	createDynamicObjects(objects_origin, 20, 50, 20, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
+	createDynamicObjects(objects_origin, 1, 1, 1, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
 
 	DEBUG_OUTPUT(std::cout << "Created dynamic objects." << std::endl);
 #endif

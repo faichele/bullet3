@@ -34,9 +34,8 @@ __kernel void findPushPullContactsKernel(__global b3RigidBodyData_t* bodies, con
 					}
 				}
 			}
-
-			pushPullVelocities[bodyID].m_linearVel = ppLinVel;
-			pushPullVelocities[bodyID].m_angularVel = ppAngVel;
 		}
+		pushPullVelocities[bodyID].m_linearVel = ppLinVel;
+		pushPullVelocities[bodyID].m_angularVel = ppAngVel;
 	}
 }

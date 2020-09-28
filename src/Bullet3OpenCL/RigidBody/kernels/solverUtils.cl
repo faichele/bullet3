@@ -702,8 +702,8 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 	
 	if (invMassA)
 	{
-		dLinVelA = deltaLinearVelocities[splitIndexA];
-		dAngVelA = deltaAngularVelocities[splitIndexA];
+		dLinVelA = deltaLinearVelocities[splitIndexA];  //+ppVelocities[bIdx].m_linearVel;
+		dAngVelA = deltaAngularVelocities[splitIndexA]; //+ppVelocities[bIdx].m_angularVel;
 	}
 
 	int bodyOffsetB = offsetSplitBodies[bIdx];
@@ -712,8 +712,8 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 
 	if (invMassB)
 	{
-		dLinVelB = deltaLinearVelocities[splitIndexB];
-		dAngVelB = deltaAngularVelocities[splitIndexB];
+		dLinVelB = deltaLinearVelocities[splitIndexB]; //+ppVelocities[aIdx].m_linearVel;
+		dAngVelB = deltaAngularVelocities[splitIndexB]; //+ppVelocities[aIdx].m_angularVel;
 	}
 
 	{
@@ -743,22 +743,27 @@ void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __
 			float4 r0 = center - posA;
 			float4 r1 = center - posB;
 			
-			float4 totalLinVelA = linVelA + dLinVelA + ppVelocities[aIdx].m_linearVel;
-			float4 totalLinVelB = linVelB + dLinVelB + ppVelocities[bIdx].m_linearVel;
-			float4 totalAngVelA = angVelA + dAngVelA + ppVelocities[aIdx].m_angularVel;
-			float4 totalAngVelB = angVelB + dAngVelB + ppVelocities[bIdx].m_angularVel;
+			float4 totalLinVelA = linVelA + dLinVelA; //+ ppVelocities[aIdx].m_linearVel;
+			float4 totalLinVelB = linVelB + dLinVelB; //+ ppVelocities[bIdx].m_linearVel;
+			float4 totalAngVelA = angVelA + dAngVelA; //+ ppVelocities[aIdx].m_angularVel;
+			float4 totalAngVelB = angVelB + dAngVelB; //+ ppVelocities[bIdx].m_angularVel;
 
 			for (int i = 0; i < 2; i++)
 			{
-				totalLinVelA = linVelA + dLinVelA; // + ppVelocities[aIdx].m_linearVel;
-				totalLinVelB = linVelB + dLinVelB; // + ppVelocities[bIdx].m_linearVel;
-				totalAngVelA = angVelA + dAngVelA; // + ppVelocities[aIdx].m_angularVel;
-				totalAngVelB = angVelB + dAngVelB; // + ppVelocities[bIdx].m_angularVel;
+				//totalLinVelA = linVelA + dLinVelA; // + ppVelocities[aIdx].m_linearVel;
+				//totalLinVelB = linVelB + dLinVelB; // + ppVelocities[bIdx].m_linearVel;
+				//totalAngVelA = angVelA + dAngVelA; // + ppVelocities[aIdx].m_angularVel;
+				//totalAngVelB = angVelB + dAngVelB; // + ppVelocities[bIdx].m_angularVel;
+				totalLinVelA += dLinVelA;
+				totalLinVelB += dLinVelB;
+				totalAngVelA += dAngVelA;
+				totalAngVelB += dAngVelB;
 
 				setLinearAndAngular(tangent[i], r0, r1, &linear, &angular0, &angular1);
 				float rambdaDt = calcRelVel(linear, -linear, angular0, angular1,
-											//linVelA + dLinVelA, angVelA + dAngVelA, linVelB + dLinVelB, angVelB + dAngVelB
-											totalLinVelA, totalLinVelB, totalAngVelA, totalAngVelB
+											linVelA + dLinVelA + ppVelocities[bIdx].m_linearVel, angVelA + dAngVelA + +ppVelocities[bIdx].m_angularVel, linVelB + dLinVelB, angVelB + dAngVelB
+											//linVelA + dLinVelA + ppVelocities[aIdx].m_linearVel, angVelA + dAngVelA, linVelB + dLinVelB + ppVelocities[bIdx].m_linearVel, angVelB + dAngVelB
+											//totalLinVelA, totalLinVelB, totalAngVelA, totalAngVelB
 				);
 				rambdaDt *= cs->m_fJacCoeffInv[i];
 				

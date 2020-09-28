@@ -550,7 +550,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 			launcher.setBuffer(m_data->m_bodiesPushPullBehaviorsGPU->getBufferCL());   // Push-pull behavior definitions
 			launcher.setBuffer(m_data->m_bodiesPushPullVelocitiesGPU->getBufferCL());  // Resulting push-pull velocities to apply per body
 			launcher.setConst(numPairs);
-			launcher.setConst(m_data->m_bodiesPushPullBehaviorsGPU->size());  // number of push-pull behavior definitions
+			launcher.setConst((int) m_data->m_bodiesPushPullBehaviorsGPU->size());  // number of push-pull behavior definitions
 
 			launcher.launch1D(numBodies, 64);
 
