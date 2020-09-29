@@ -135,10 +135,10 @@ b3GpuJacobiContactSolver::~b3GpuJacobiContactSolver()
 
 void b3GpuJacobiContactSolver::setPushPullBehaviorData(const b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& ppBehaviors, const b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& ppVelocities)
 {
-	DEBUG_OUTPUT(std::cout << "b3GpuJacobiContactSolver::setPushPullBehaviorData(): " << ppBehaviors.size() << " behaviors." << std::endl);
+	std::cout << "b3GpuJacobiContactSolver::setPushPullBehaviorData(): " << ppBehaviors.size() << " behaviors." << std::endl;
 	for (int k = 0; k < ppBehaviors.size(); ++k)
 	{
-		DEBUG_OUTPUT(std::cout << " - Behavior " << k << ": body ID " << ppBehaviors[k].m_bodyID << ", ghost object ID " << ppBehaviors[k].m_ghostObjectID << std::endl);
+		std::cout << " - Behavior " << k << ": body ID " << ppBehaviors[k].m_bodyID << ", linearVel = (" << ppBehaviors[k].m_linearVel.x << "," << ppBehaviors[k].m_linearVel.y << "," << ppBehaviors[k].m_linearVel.z << ")" << std::endl;
 	}
 	m_data->m_pushPullBehaviors->copyFromHost(ppBehaviors);
 	m_data->m_pushPullVelocities->copyFromHost(ppVelocities);
@@ -860,7 +860,7 @@ void b3GpuJacobiContactSolver::solveGroupHost(b3RigidBodyData* bodies, b3Inertia
 
 void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_mem inertiaBuf, int numContacts, cl_mem contactBuf, const struct b3Config& config, int static0Index,
 											 cl_mem pushPullVelocities)
-											 //b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
+//b3AlignedObjectArray<b3RigidBodyPushPullBehavior>& pushPullBehaviours, b3AlignedObjectArray<b3RigidBodyBehaviorVelocities>& pushPullVelocities)
 {
 	b3JacobiSolverInfo solverInfo;
 	solverInfo.m_fixedBodyIndex = static0Index;
@@ -1005,10 +1005,21 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 			launcher.setConst(numManifolds);
 			launcher.setConst(numBodies);
 
+			b3AlignedObjectArray<b3RigidBodyPushPullBehavior> ppBehaviors;
+			if (1) {
+				m_data->m_pushPullBehaviors->copyToHost(ppBehaviors);
+
+				std::cout << "PP behavior count: " << ppBehaviors.size() << std::endl;
+				for (int k = 0; k < ppBehaviors.size(); ++k)
+				{
+					std::cout << " - Behavior " << k << ": body ID " << ppBehaviors[k].m_bodyID << ", linearVel = (" << ppBehaviors[k].m_linearVel.x << "," << ppBehaviors[k].m_linearVel.y << "," << ppBehaviors[k].m_linearVel.z << ")" << std::endl;
+				}
+			}
+
 			launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
-			launcher.setConst((int) m_data->m_pushPullBehaviors->size());
+			launcher.setConst((int)m_data->m_pushPullBehaviors->size());
 			launcher.setBuffer(pushPullVelocities);
-			
+
 			launcher.launch1D(numManifolds);
 			clFinish(m_queue);
 		}

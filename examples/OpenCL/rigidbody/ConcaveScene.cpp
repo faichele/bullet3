@@ -522,6 +522,8 @@ void ConcaveScene::setupScene()
 	tmp.setEulerZYX(0, 0, 0);
 	b3Quaternion orientation_plane;
 	tmp.getRotation(orientation_plane);
+
+
 	b3Vector3 position_plane = b3MakeVector3(0, -1, 0);
 	b3Vector4 scaling_plane = b3MakeVector4(1000, 5, 1000, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane);
@@ -532,10 +534,10 @@ void ConcaveScene::setupScene()
 	b3Vector4 scaling_walls = b3MakeVector4(8.0, 25, 8.0, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName_walls, position_walls, orientation_plane, scaling_walls);
 
-	b3Vector3 trVel1 = b3MakeVector3(200.0, 0, 0);
+	b3Vector3 trVel1 = b3MakeVector3(1, 2, 3);
 	b3Vector3 rotVel1 = b3MakeVector3(0, 0, 0);
 
-	b3Vector3 trAcc1 = b3MakeVector3(0, 0, 0);
+	b3Vector3 trAcc1 = b3MakeVector3(4, 5, 6);
 	b3Vector3 rotAcc1 = b3MakeVector3(0, 0, 0);
 
 	m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, trAcc1, rotAcc1, position_plane, orientation_plane, true);

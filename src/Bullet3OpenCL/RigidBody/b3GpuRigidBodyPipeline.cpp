@@ -542,17 +542,17 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 
 			m_data->m_clock.reset();
 
-			b3LauncherCL launcher(m_data->m_queue, m_data->m_processPushPullImpulsesKernel, "m_processPushPullImpulsesKernel");
-			launcher.setBuffer(npData->m_bodyBufferGPU->getBufferCL());
-			launcher.setConst(numBodies);
-			launcher.setConst(deltaTime);
-			launcher.setBuffer(m_data->m_overlappingPairs);
-			launcher.setBuffer(m_data->m_bodiesPushPullBehaviorsGPU->getBufferCL());   // Push-pull behavior definitions
-			launcher.setBuffer(m_data->m_bodiesPushPullVelocitiesGPU->getBufferCL());  // Resulting push-pull velocities to apply per body
-			launcher.setConst(numPairs);
-			launcher.setConst((int) m_data->m_bodiesPushPullBehaviorsGPU->size());  // number of push-pull behavior definitions
+			//b3LauncherCL launcher(m_data->m_queue, m_data->m_processPushPullImpulsesKernel, "m_processPushPullImpulsesKernel");
+			//launcher.setBuffer(npData->m_bodyBufferGPU->getBufferCL());
+			//launcher.setConst(numBodies);
+			//launcher.setConst(deltaTime);
+			//launcher.setBuffer(m_data->m_overlappingPairs);
+			//launcher.setBuffer(m_data->m_bodiesPushPullBehaviorsGPU->getBufferCL());   // Push-pull behavior definitions
+			//launcher.setBuffer(m_data->m_bodiesPushPullVelocitiesGPU->getBufferCL());  // Resulting push-pull velocities to apply per body
+			//launcher.setConst(numPairs);
+			//launcher.setConst((int) m_data->m_bodiesPushPullBehaviorsGPU->size());  // number of push-pull behavior definitions
 
-			launcher.launch1D(numBodies, 64);
+			//launcher.launch1D(numBodies, 64);
 
 			unsigned int timePPLogicGPU = m_data->m_clock.getTimeMicroseconds();
 
