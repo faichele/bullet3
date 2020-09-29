@@ -1003,13 +1003,13 @@ void b3GpuJacobiContactSolver::solveContacts(int numBodies, cl_mem bodyBuf, cl_m
 			launcher.setConst(solverInfo.m_positionConstraintCoeff);
 			launcher.setConst(solverInfo.m_fixedBodyIndex);
 			launcher.setConst(numManifolds);
-
-			// launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
-			// launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
-			// launcher.setConst(pushPullBehaviours.size());
 			launcher.setConst(numBodies);
-			launcher.setBuffer(pushPullVelocities);
 
+			launcher.setBuffer(pushPullVelocities);
+			launcher.setBuffer(m_data->m_pushPullBehaviors->getBufferCL());
+			// launcher.setBuffer(m_data->m_pushPullVelocities->getBufferCL());
+			launcher.setConst(m_data->m_pushPullBehaviors->size());
+			
 			launcher.launch1D(numManifolds);
 			clFinish(m_queue);
 		}

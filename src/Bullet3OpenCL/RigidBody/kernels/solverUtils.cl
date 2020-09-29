@@ -818,8 +818,9 @@ __kernel void SolveFrictionJacobiKernel(__global Constraint4* gConstraints, __gl
 										__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
 										__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
 										float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds,
-										int numBodies, __global b3RigidBodyBehaviorVelocities* ppVelocities)
-										//, __global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
+										int numBodies, __global b3RigidBodyBehaviorVelocities* ppVelocities, 
+										__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, int numPushPullBehaviors)
+										//, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
 {
 	int i = GET_GLOBAL_IDX;
 	if (i<numManifolds)
