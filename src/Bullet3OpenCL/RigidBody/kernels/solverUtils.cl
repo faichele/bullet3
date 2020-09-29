@@ -667,8 +667,8 @@ float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBo
 void solveFrictionConstraint(__global Body* gBodies, __global Shape* gShapes, __global Constraint4* ldsCs,
 							__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
 							__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
-							 __global b3RigidBodyBehaviorVelocities* ppVelocities)
-							//, __global b3RigidBodyPushPullBehavior* gPushPullBehaviors, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
+							__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, int numPushPullBehaviors,
+							__global b3RigidBodyBehaviorVelocities* ppVelocities)
 {
 	__global Constraint4* cs = ldsCs;
 
@@ -818,15 +818,15 @@ __kernel void SolveFrictionJacobiKernel(__global Constraint4* gConstraints, __gl
 										__global int2* contactConstraintOffsets,__global unsigned int* offsetSplitBodies,
 										__global float4* deltaLinearVelocities, __global float4* deltaAngularVelocities,
 										float deltaTime, float positionDrift, float positionConstraintCoeff, int fixedBodyIndex, int numManifolds,
-										int numBodies, __global b3RigidBodyBehaviorVelocities* ppVelocities, 
-										__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, int numPushPullBehaviors)
-										//, __global b3RigidBodyBehaviorVelocities* gPushPullVelocities, int numPushPullBehaviors)
+										int numBodies, 
+										__global b3RigidBodyPushPullBehavior* gPushPullBehaviors, int numPushPullBehaviors,
+										__global b3RigidBodyBehaviorVelocities*ppVelocities)
 {
 	int i = GET_GLOBAL_IDX;
 	if (i<numManifolds)
 	{
-		solveFrictionConstraint(gBodies, gShapes, &gConstraints[i], &contactConstraintOffsets[i], offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities, ppVelocities);
-								//gPushPullBehaviors, gPushPullVelocities, numPushPullBehaviors);
+		solveFrictionConstraint(gBodies, gShapes, &gConstraints[i], &contactConstraintOffsets[i], offsetSplitBodies, deltaLinearVelocities, deltaAngularVelocities,
+								gPushPullBehaviors, numPushPullBehaviors, ppVelocities);
 	}
 }
 
