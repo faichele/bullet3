@@ -529,7 +529,7 @@ void ConcaveScene::setupScene()
 	b3Vector3 position_walls = b3MakeVector3(0, 0, 0);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
-	b3Vector4 scaling_walls = b3MakeVector4(8.0, 25, 8.0, 1);
+	b3Vector4 scaling_walls = b3MakeVector4(6.0, 25, 6.0, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName_walls, position_walls, orientation_plane, scaling_walls);
 
 	b3Vector3 trVel1 = b3MakeVector3(0, 0, 0);
@@ -555,9 +555,9 @@ void ConcaveScene::setupScene()
 		m_ghostObjectColIndices.push_back(physicsId);
 	}*/
 
-	b3Vector3 objects_origin = b3MakeVector3(0, 0, 1);
+	b3Vector3 objects_origin = b3MakeVector3(0, 0, -10);
 	float cube_scale = 0.75f;
-	createDynamicObjects(objects_origin, 20, 50, 20, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
+	createDynamicObjects(objects_origin, 30, 50, 30, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
 
 	DEBUG_OUTPUT(std::cout << "Created dynamic objects." << std::endl);
 #endif

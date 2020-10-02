@@ -2,7 +2,14 @@
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h"
 #include "Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyBehavior.h"
 
-__kernel void findPushPullContactsKernel(__global b3RigidBodyData_t* bodies, const int numBodies, float timeStep, __global int4* collidingPairs, __global b3RigidBodyPushPullBehavior_t* pushPullBehaviors, __global b3RigidBodyBehaviorVelocities_t* pushPullVelocities, int numCollidingPairs, int numPushPullBehaviors)
+__kernel void findPushPullContactsKernel(__global b3RigidBodyData_t* bodies, 
+										 const int numBodies, 
+										 float timeStep, 
+										 __global int4* collidingPairs, 
+										 __global b3RigidBodyPushPullBehavior_t* pushPullBehaviors, 
+	                                     __global b3RigidBodyBehaviorVelocities_t* pushPullVelocities, 
+	                                     int numCollidingPairs, 
+	                                     int numPushPullBehaviors)
 {
 	int bodyID = get_global_id(0);
 	if (bodyID < numBodies)
