@@ -34,8 +34,6 @@ std::shared_ptr<GLInstanceGraphicsShape> createGraphicsShapeFromWavefrontObj(tin
 {
 	b3AlignedObjectArray<GLInstanceVertex>* vertices = new b3AlignedObjectArray<GLInstanceVertex>;
 	{
-		//		int numVertices = obj->vertexCount;
-		//	int numIndices = 0;
 		b3AlignedObjectArray<int>* indicesPtr = new b3AlignedObjectArray<int>;
 
 		for (int s = 0; s < shapes.size(); s++)
@@ -45,60 +43,56 @@ std::shared_ptr<GLInstanceGraphicsShape> createGraphicsShapeFromWavefrontObj(tin
 
 			for (int f = 0; f < faceCount; f += 3)
 			{
-				//b3Vector3 normal(face.m_plane[0],face.m_plane[1],face.m_plane[2]);
-				if (1)
-				{
-					b3Vector3 normal = b3MakeVector3(0, 1, 0);
-					int vtxBaseIndex = vertices->size();
+				b3Vector3 normal = b3MakeVector3(0, 1, 0);
+				int vtxBaseIndex = vertices->size();
 
-					indicesPtr->push_back(vtxBaseIndex);
-					indicesPtr->push_back(vtxBaseIndex + 1);
-					indicesPtr->push_back(vtxBaseIndex + 2);
+				indicesPtr->push_back(vtxBaseIndex);
+				indicesPtr->push_back(vtxBaseIndex + 1);
+				indicesPtr->push_back(vtxBaseIndex + 2);
 
-					GLInstanceVertex vtx0;
-					vtx0.xyzw[0] = attrs.vertices[(int)shape.mesh.indices[f].vertex_index * 3 + 0];
-					vtx0.xyzw[1] = attrs.vertices[(int)shape.mesh.indices[f].vertex_index * 3 + 1];
-					vtx0.xyzw[2] = attrs.vertices[(int)shape.mesh.indices[f].vertex_index * 3 + 2];
-					vtx0.xyzw[3] = 0.f;
+				GLInstanceVertex vtx0;
+				vtx0.xyzw[0] = attrs.vertices[(int)shape.mesh.indices[f].vertex_index * 3 + 0];
+				vtx0.xyzw[1] = attrs.vertices[(int)shape.mesh.indices[f].vertex_index * 3 + 1];
+				vtx0.xyzw[2] = attrs.vertices[(int)shape.mesh.indices[f].vertex_index * 3 + 2];
+				vtx0.xyzw[3] = 0.f;
 
-					vtx0.uv[0] = 0.5f;  //shape.mesh.positions[shape.mesh.indices[f]*3+2];?
-					vtx0.uv[1] = 0.5f;
+				vtx0.uv[0] = 0.5f;  //shape.mesh.positions[shape.mesh.indices[f]*3+2];?
+				vtx0.uv[1] = 0.5f;
 
-					GLInstanceVertex vtx1;
-					vtx1.xyzw[0] = attrs.vertices[(int)shape.mesh.indices[f + 1].vertex_index * 3 + 0];
-					vtx1.xyzw[1] = attrs.vertices[(int)shape.mesh.indices[f + 1].vertex_index * 3 + 1];
-					vtx1.xyzw[2] = attrs.vertices[(int)shape.mesh.indices[f + 1].vertex_index * 3 + 2];
-					vtx1.xyzw[3] = 0.f;
-					vtx1.uv[0] = 0.5f;  //obj->textureList[face->vertex_index[1]]->e[0];
-					vtx1.uv[1] = 0.5f;  //obj->textureList[face->vertex_index[1]]->e[1];
+				GLInstanceVertex vtx1;
+				vtx1.xyzw[0] = attrs.vertices[(int)shape.mesh.indices[f + 1].vertex_index * 3 + 0];
+				vtx1.xyzw[1] = attrs.vertices[(int)shape.mesh.indices[f + 1].vertex_index * 3 + 1];
+				vtx1.xyzw[2] = attrs.vertices[(int)shape.mesh.indices[f + 1].vertex_index * 3 + 2];
+				vtx1.xyzw[3] = 0.f;
+				vtx1.uv[0] = 0.5f;  //obj->textureList[face->vertex_index[1]]->e[0];
+				vtx1.uv[1] = 0.5f;  //obj->textureList[face->vertex_index[1]]->e[1];
 
-					GLInstanceVertex vtx2;
-					vtx2.xyzw[0] = attrs.vertices[shape.mesh.indices[f + 2].vertex_index * 3 + 0];
-					vtx2.xyzw[1] = attrs.vertices[shape.mesh.indices[f + 2].vertex_index * 3 + 1];
-					vtx2.xyzw[2] = attrs.vertices[shape.mesh.indices[f + 2].vertex_index * 3 + 2];
-					vtx2.xyzw[3] = 0.f;
-					vtx2.uv[0] = 0.5f;
-					vtx2.uv[1] = 0.5f;
+				GLInstanceVertex vtx2;
+				vtx2.xyzw[0] = attrs.vertices[shape.mesh.indices[f + 2].vertex_index * 3 + 0];
+				vtx2.xyzw[1] = attrs.vertices[shape.mesh.indices[f + 2].vertex_index * 3 + 1];
+				vtx2.xyzw[2] = attrs.vertices[shape.mesh.indices[f + 2].vertex_index * 3 + 2];
+				vtx2.xyzw[3] = 0.f;
+				vtx2.uv[0] = 0.5f;
+				vtx2.uv[1] = 0.5f;
 
-					b3Vector3 v0 = b3MakeVector3(vtx0.xyzw[0], vtx0.xyzw[1], vtx0.xyzw[2]);
-					b3Vector3 v1 = b3MakeVector3(vtx1.xyzw[0], vtx1.xyzw[1], vtx1.xyzw[2]);
-					b3Vector3 v2 = b3MakeVector3(vtx2.xyzw[0], vtx2.xyzw[1], vtx2.xyzw[2]);
+				b3Vector3 v0 = b3MakeVector3(vtx0.xyzw[0], vtx0.xyzw[1], vtx0.xyzw[2]);
+				b3Vector3 v1 = b3MakeVector3(vtx1.xyzw[0], vtx1.xyzw[1], vtx1.xyzw[2]);
+				b3Vector3 v2 = b3MakeVector3(vtx2.xyzw[0], vtx2.xyzw[1], vtx2.xyzw[2]);
 
-					normal = (v1 - v0).cross(v2 - v0);
-					normal.normalize();
-					vtx0.normal[0] = normal[0];
-					vtx0.normal[1] = normal[1];
-					vtx0.normal[2] = normal[2];
-					vtx1.normal[0] = normal[0];
-					vtx1.normal[1] = normal[1];
-					vtx1.normal[2] = normal[2];
-					vtx2.normal[0] = normal[0];
-					vtx2.normal[1] = normal[1];
-					vtx2.normal[2] = normal[2];
-					vertices->push_back(vtx0);
-					vertices->push_back(vtx1);
-					vertices->push_back(vtx2);
-				}
+				normal = (v1 - v0).cross(v2 - v0);
+				normal.normalize();
+				vtx0.normal[0] = normal[0];
+				vtx0.normal[1] = normal[1];
+				vtx0.normal[2] = normal[2];
+				vtx1.normal[0] = normal[0];
+				vtx1.normal[1] = normal[1];
+				vtx1.normal[2] = normal[2];
+				vtx2.normal[0] = normal[0];
+				vtx2.normal[1] = normal[1];
+				vtx2.normal[2] = normal[2];
+				vertices->push_back(vtx0);
+				vertices->push_back(vtx1);
+				vertices->push_back(vtx2);
 			}
 		}
 
@@ -251,7 +245,7 @@ void ConcaveScene::renderScene()
 {
 	DEBUG_OUTPUT(std::cout << "Graphics instances in scene: " << m_instancingRenderer->getTotalNumInstances() << std::endl);
 	DEBUG_OUTPUT(std::cout << "Rigid objects in scene     : " << m_data->m_rigidBodyPipeline->getNumBodies() << std::endl);
-	//physicsDebugDraw(0);
+	physicsDebugDraw(0);
 	GpuRigidBodyDemo::renderScene();
 }
 
@@ -357,6 +351,16 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 				bool ghostObject = (std::find(m_ghostObjectColIndices.begin(), m_ghostObjectColIndices.end(), concaveMeshCollidableIDs[k]) != m_ghostObjectColIndices.end());
 				b3AlignedObjectArray<b3Vector3> meshVertices;
 				b3AlignedObjectArray<int> meshIndices;
+
+				btVector3 mesh_color = triangleColor;
+				if (ghostObject)
+					mesh_color = ghostObjectColor;
+
+				if (m_staticMeshColorsPhysics.find(concaveMeshCollidableIDs[k]) != m_staticMeshColorsPhysics.end())
+					mesh_color = btVector3(m_staticMeshColorsPhysics[concaveMeshCollidableIDs[k]].x,
+										   m_staticMeshColorsPhysics[concaveMeshCollidableIDs[k]].y,
+										   m_staticMeshColorsPhysics[concaveMeshCollidableIDs[k]].z);
+
 				if (m_data->m_np->getMeshVertices(concaveMeshCollidableIDs[k], meshVertices) &&
 					m_data->m_np->getMeshIndices(concaveMeshCollidableIDs[k], meshIndices))
 				{
@@ -366,11 +370,8 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 						b3Vector3& v1 = meshVertices[meshIndices[m]];
 						b3Vector3& v2 = meshVertices[meshIndices[m + 1]];
 						b3Vector3& v3 = meshVertices[meshIndices[m + 2]];
-
-						if (!ghostObject)
-							m_debugDrawer->drawTriangle(btVector3(v1.x, v1.y, v1.z), btVector3(v2.x, v2.y, v2.z), btVector3(v3.x, v3.y, v3.z), triangleColor, 1.);
-						else
-							m_debugDrawer->drawTriangle(btVector3(v1.x, v1.y, v1.z), btVector3(v2.x, v2.y, v2.z), btVector3(v3.x, v3.y, v3.z), ghostObjectColor, 1.);
+	
+						m_debugDrawer->drawTriangle(btVector3(v1.x, v1.y, v1.z), btVector3(v2.x, v2.y, v2.z), btVector3(v3.x, v3.y, v3.z), mesh_color, 1.);
 					}
 				}
 			}
@@ -431,10 +432,10 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 				btVector3 manifoldCenterA(contactConstraints[k].m_center.x, contactConstraints[k].m_center.y, contactConstraints[k].m_center.z);
 
 				DEBUG_OUTPUT(std::cout << "Manifold " << k << " bodyA (" << contactConstraints[k].m_bodyA << "): contactPos = (" << contactPosA.x() << ", " << contactPosA.y() << ", " << contactPosA.z() << ")" << std::endl
-						  << "manifoldCenter = (" << manifoldCenterA.x() << ", " << manifoldCenterA.y() << ", " << manifoldCenterA.z() << ")" << std::endl
-						  << "dLinVel = (" << dlvA.x() << ", " << dlvA.y() << ", " << dlvA.z() << ")" << std::endl
-						  << "dAngVel = (" << davA.x() << ", " << davA.y() << ", " << davA.z() << ")"
-						  << std::endl);
+									   << "manifoldCenter = (" << manifoldCenterA.x() << ", " << manifoldCenterA.y() << ", " << manifoldCenterA.z() << ")" << std::endl
+									   << "dLinVel = (" << dlvA.x() << ", " << dlvA.y() << ", " << dlvA.z() << ")" << std::endl
+									   << "dAngVel = (" << davA.x() << ", " << davA.y() << ", " << davA.z() << ")"
+									   << std::endl);
 
 				DEBUG_OUTPUT(std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl);
 				for (int m = 0; m < contactManifolds[k].getNPoints() - 1; ++m)
@@ -464,10 +465,10 @@ void ConcaveScene::physicsDebugDraw(int debugFlags)
 				btVector3 manifoldCenterB(contactConstraints[k].m_center.x, contactConstraints[k].m_center.y, contactConstraints[k].m_center.z);
 
 				DEBUG_OUTPUT(std::cout << "Manifold " << k << " bodyB (" << contactConstraints[k].m_bodyB << "): contactPos = (" << contactPosB.x() << ", " << contactPosB.y() << ", " << contactPosB.z() << ")" << std::endl
-						  << "manifoldCenter = (" << manifoldCenterB.x() << ", " << manifoldCenterB.y() << ", " << manifoldCenterB.z() << ")" << std::endl
-						  << "dLinVel = (" << dlvB.x() << ", " << dlvB.y() << ", " << dlvB.z() << ")" << std::endl
-						  << "dAngVel = (" << davB.x() << ", " << davB.y() << ", " << davB.z() << ")"
-						  << std::endl);
+									   << "manifoldCenter = (" << manifoldCenterB.x() << ", " << manifoldCenterB.y() << ", " << manifoldCenterB.z() << ")" << std::endl
+									   << "dLinVel = (" << dlvB.x() << ", " << dlvB.y() << ", " << dlvB.z() << ")" << std::endl
+									   << "dAngVel = (" << davB.x() << ", " << davB.y() << ", " << davB.z() << ")"
+									   << std::endl);
 
 				DEBUG_OUTPUT(std::cout << "Points in manifold " << k << ": " << contactManifolds[k].getNPoints() << std::endl);
 				for (int m = 0; m < contactManifolds[k].getNPoints() - 1; ++m)
@@ -513,6 +514,7 @@ void ConcaveScene::exitPhysics()
 void ConcaveScene::setupScene()
 {
 	const char* fileName = "cube.obj";  //"samurai_monastry.obj";
+	const char* fileName_cube_2 = "cube_2.obj";
 	const char* fileName_walls = "freefall_test_frame.obj";
 
 	int graphicsId = -1, physicsId = -1;
@@ -522,24 +524,61 @@ void ConcaveScene::setupScene()
 	tmp.setEulerZYX(0, 0, 0);
 	b3Quaternion orientation_plane;
 	tmp.getRotation(orientation_plane);
-	b3Vector3 position_plane = b3MakeVector3(0, -1, 0);
-	b3Vector4 scaling_plane = b3MakeVector4(1000, 5, 1000, 1);
+	b3Vector3 position_plane = b3MakeVector3(0, -5, 0);
+	b3Vector4 scaling_plane = b3MakeVector4(750, 5, 750, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane);
 
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
+
+	int graphicsId_walls = -1, physicsId_walls = -1;
 	b3Vector3 position_walls = b3MakeVector3(0, 0, 0);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
-	b3Vector4 scaling_walls = b3MakeVector4(6.0, 25, 6.0, 1);
-	createConcaveMesh(graphicsId, physicsId, fileName_walls, position_walls, orientation_plane, scaling_walls);
+	b3Vector4 scaling_walls = b3MakeVector4(6.0, 50.0, 6.0, 1);
+	createConcaveMesh(graphicsId_walls, physicsId_walls, fileName_walls, position_walls, orientation_plane, scaling_walls);
 
-	b3Vector3 trVel1 = b3MakeVector3(0, 0, 0);
+	std::cout << "Registered walls with graphicsId_walls = " << graphicsId_walls << " and physicsId_walls = " << physicsId_walls << std::endl;
+
+	// Test conveyor 1: Apply push-pull velocity to center of mass
+	int graphicsId_conveyor_1 = -1, physicsId_conveyor_1 = -1;
+	b3Vector3 position_test_conveyor_1 = b3MakeVector3(0, 1, 0);
+	tmp.setEulerZYX(0, 0, 0);
+	tmp.getRotation(orientation_plane);
+	b3Vector4 scaling_test_conveyor_1 = b3MakeVector4(250.0, 5.0, 75.0, 1);
+	
+	createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName_cube_2, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(0.9, 0.1, 0.1, 1.0));
+	//createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(1.0, 0.1, 0.1, 1.0));
+
+	std::cout << "Registered conveyor_1 with graphicsId_conveyor_1 = " << graphicsId_conveyor_1 << " and physicsId_conveyor_1 = " << physicsId_conveyor_1 << std::endl;
+
+	// Test conveyor 2: Apply push-pull velocity per contact point
+	/*int graphicsId_conveyor_2 = -1, physicsId_conveyor_2 = -1;
+	b3Vector3 position_test_conveyor_2 = b3MakeVector3(0, 10, 100);
+	tmp.setEulerZYX(0, 0, 0);
+	tmp.getRotation(orientation_plane);
+	b3Vector4 scaling_test_conveyor_2 = b3MakeVector4(250.0, 5.0, 75.0, 1);
+	createConcaveMesh(graphicsId_conveyor_2, physicsId_conveyor_2, fileName, position_test_conveyor_2, orientation_plane, scaling_test_conveyor_2, false, 0.0f, 0, b3MakeVector4(0.1, 1.0, 0.1, 1.0));
+
+	std::cout << "Registered conveyor_2 with graphicsId_conveyor_2 = " << graphicsId_conveyor_2 << " and physicsId_conveyor_2 = " << physicsId_conveyor_2 << std::endl;*/
+
+	// Test conveyor 3: Apply push-pull velocity per contact point, 2
+	/*int graphicsId_conveyor_3 = -1, physicsId_conveyor_3 = -1;
+	b3Vector3 position_test_conveyor_3 = b3MakeVector3(0, 10, 200);
+	tmp.setEulerZYX(0, 0, 0);
+	tmp.getRotation(orientation_plane);
+	b3Vector4 scaling_test_conveyor_3 = b3MakeVector4(250.0, 5.0, 75.0, 1);
+	createConcaveMesh(graphicsId_conveyor_3, physicsId_conveyor_3, fileName, position_test_conveyor_3, orientation_plane, scaling_test_conveyor_3, false, 0.0f, 0, b3MakeVector4(1.0, 1.0, 0.1, 1.0));
+
+	std::cout << "Registered conveyor_3 with graphicsId_conveyor_3 = " << graphicsId_conveyor_3 << " and physicsId_conveyor_3 = " << physicsId_conveyor_3 << std::endl;*/
+	
+	/*b3Vector3 trVel1 = b3MakeVector3(0, 0, 0);
 	b3Vector3 rotVel1 = b3MakeVector3(0, 8.0, 0);
 
 	b3Vector3 trAcc1 = b3MakeVector3(0, 0, -1.0);
 	b3Vector3 rotAcc1 = b3MakeVector3(0, 1.0, 0);
 
 	m_data->m_rigidBodyPipeline->setPhysicsInstancePushPullBehavior(physicsId, trVel1, rotVel1, trAcc1, rotAcc1, position_plane, orientation_plane, true);
-	m_ghostObjectColIndices.push_back(physicsId);
+	m_ghostObjectColIndices.push_back(physicsId);*/
 
 	// TODO: Fix application of gravity when NO ghost object is present in the simulation!
 	/*b3Vector3 position_plane_ghost = b3MakeVector3(0, -0.5, 0);
@@ -555,9 +594,9 @@ void ConcaveScene::setupScene()
 		m_ghostObjectColIndices.push_back(physicsId);
 	}*/
 
-	b3Vector3 objects_origin = b3MakeVector3(0, 0, -10);
-	float cube_scale = 0.75f;
-	createDynamicObjects(objects_origin, 30, 50, 30, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
+	b3Vector3 objects_origin = b3MakeVector3(0, 50, -10);
+	float cube_scale = 5.0f;
+	createDynamicObjects(objects_origin, 1, 1, 1, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
 
 	DEBUG_OUTPUT(std::cout << "Created dynamic objects." << std::endl);
 #endif
@@ -639,7 +678,7 @@ void ConcaveScene::setupScene()
 	sprintf(msg, "Num objects = %d", numInstances);
 }
 
-bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject, float mass, int collisionMask)
+bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject, float mass, int collisionMask, const b3Vector4& color)
 {
 	char relativeFileName[1024];
 	const char* prefix[] = {"./data/", "../data/", "../../data/", "../../../data/", "../../../../data/"};
@@ -684,7 +723,7 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 			for (size_t l = 0; l < numIndices; ++l)
 			{
 				const float vtx = attribs.vertices.at(shape.mesh.indices.at(l).vertex_index);
-				DEBUG_OUTPUT(std::cout << "Vertex coord. at index: " << shape.mesh.indices.at(l).vertex_index << ": " << vtx << std::endl);
+				std::cout << "Vertex coord. at index: " << shape.mesh.indices.at(l).vertex_index << ": " << vtx << std::endl;
 			}
 		}
 		std::cout << "======================================================================" << std::endl;
@@ -693,6 +732,10 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 
 		b3AlignedObjectArray<b3Vector3> verts;
 		b3AlignedObjectArray<b3Vector3> untransformed_verts;
+		b3Vector3 quat_axis = orientation.getAxis();
+		b3Scalar quat_angle = orientation.getAngle();
+
+		std::cout << "======================================================================" << std::endl;
 		for (int i = 0; i < shape->m_numvertices; i++)
 		{
 			b3Vector3 vtx_untransformed = b3MakeVector3(shape->m_vertices->at(i).xyzw[0],
@@ -700,50 +743,73 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 														shape->m_vertices->at(i).xyzw[2]);
 			untransformed_verts.push_back(vtx_untransformed * scaling);
 
-			// Setting position of the mesh later instead of shifting the individual vertices?
-			for (int j = 0; j < 3; j++)
-				shape->m_vertices->at(i).xyzw[j] += position[j];
-
 			b3Vector3 vtx = b3MakeVector3(shape->m_vertices->at(i).xyzw[0],
 										  shape->m_vertices->at(i).xyzw[1],
 										  shape->m_vertices->at(i).xyzw[2]);
-			verts.push_back(vtx * scaling);
+
+			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before scaling    : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
+
+			// Scale individual vertices
+			vtx = vtx * scaling;
+
+			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before rotation   : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
+			// Rotate individual vertices
+			vtx = vtx.rotate(quat_axis, quat_angle);
+
+			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before translation: (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
+
+			// Setting position of the mesh later instead of shifting the individual vertices?
+			for (int j = 0; j < 3; j++)
+			{
+				//shape->m_vertices->at(i).xyzw[j] += position[j];
+				vtx[j] += position[j];
+			}
+
+			std::cout << " Vertex " << i << " after transforming : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl;
+
+			verts.push_back(vtx);
+		}
+		std::cout << "======================================================================" << std::endl;
+
+		for (int i = 0; i < shape->m_numvertices; i++)
+		{
+			shape->m_vertices->at(i).xyzw[0] = verts[i].x;
+			shape->m_vertices->at(i).xyzw[1] = verts[i].y;
+			shape->m_vertices->at(i).xyzw[2] = verts[i].z;
 		}
 
 		// TODO: Cordinate conventions for (static/unmoving) collision geometries: Assume origin-centered?
 		// Just take the vertex coordinates as-is? Explicit flag to add position as offset per vertex?
 		int colIndex = -1;
-		if (ghostObject)
-			colIndex = m_data->m_np->registerConcaveMesh(&/*untransformed_verts*/ verts, shape->m_indices, b3MakeVector3(1, 1, 1));
-		else
-			colIndex = m_data->m_np->registerConcaveMesh(&verts, shape->m_indices, b3MakeVector3(1, 1, 1));
+		// registerConcaveMesh receives scaling (1,1,1) because the actual scaling has already been applied to the mesh vertices above!
+		colIndex = m_data->m_np->registerConcaveMesh(&verts, shape->m_indices, b3MakeVector3(1.0, 1.0, 1.0));
 
 		{
-			/*int strideInBytes = 9 * sizeof(float);
-			int numVertices = sizeof(cube_vertices) / strideInBytes;
-			int numIndices = sizeof(cube_indices) / sizeof(int);
-
-            int shapeId_cube = m_guiHelper->getRenderInterface()->registerShape(&cube_vertices[0], numVertices, cube_indices, numIndices);*/
-			//int shapeId = ci.m_instancingRenderer->registerShape(&cube_vertices[0],numVertices,cube_indices,numIndices);
-
 			int shapeId_shape = m_guiHelper->getRenderInterface()->registerShape(&shape->m_vertices->at(0).xyzw[0], shape->m_numvertices, &shape->m_indices->at(0), shape->m_numIndices);
 
-			b3Vector4 color = b3MakeVector4(0.3, 0.3, 0.8, 1.0);
+			b3Vector4 mesh_color = color;
 			if (ghostObject)
-				color = b3MakeVector4(0.2, 0.8, 0.2, 0.33);
+				mesh_color = b3MakeVector4(0.2, 0.8, 0.2, 0.33);
 
 			{
-				// This is solved better by directly setting the object's position instead of offsetting the mesh vertices by the given shift!
-				b3Vector3 mesh_position = b3MakeVector3(0, 0, 0);
-				int graphics_id = m_instancingRenderer->registerGraphicsInstance(shapeId_shape, position, orientation, color, scaling);
+				// Pass zero vector as position and unit quaternion as orientation because position and orientation have already been applied to individual vertices above!
+				/*b3Vector3 graphic_obj_pos = position; //b3MakeVector3(0, 0, 0);
+				b3Quaternion graphic_obj_rot = orientation;  // (0, 0, 0, 1);
+				b3Vector3 graphic_obj_scaling = scaling;     // b3MakeVector3(1, 1, 1);*/
+
+				b3Vector3 graphic_obj_pos = b3MakeVector3(0, 0, 0);
+				b3Quaternion graphic_obj_rot(0, 0, 0, 1);
+				b3Vector3 graphic_obj_scaling = b3MakeVector3(1, 1, 1);
+
+				int graphics_id = m_instancingRenderer->registerGraphicsInstance(shapeId_shape, graphic_obj_pos, graphic_obj_rot, mesh_color, graphic_obj_scaling);
 				graphicsId = graphics_id;
 
 				int physics_id = -1;
 
 				if (ghostObject)
-					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, mesh_position, orientation, colIndex, index, false, b3CollisionFlags::CF_GHOST_OBJECT, collisionMask);
+					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orientation, colIndex, index, false, b3CollisionFlags::CF_GHOST_OBJECT, collisionMask);
 				else
-					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, mesh_position, orientation, colIndex, index, false);
+					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orientation, colIndex, index, false, b3CollisionFlags::CF_STATIC_OBJECT, 0);
 
 				physicsId = physics_id;
 
@@ -756,6 +822,17 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 			delete shape->m_vertices;
 			shape->m_vertices = nullptr;
 			shape->m_numvertices = 0;
+
+			std::cout << "physicsId = " << physicsId << ", graphicsId = " << graphicsId << std::endl;
+
+			if (graphicsId == -1 || physicsId == -1)
+			{
+				std::cerr << "Concave mesh creation failed: Either physicsId or graphicsId (or both) are invalid!" << std::endl;
+				return false;
+			}
+
+			m_staticMeshColorsPhysics[physicsId] = mesh_color;
+			m_staticMeshColorsPhysics[graphicsId] = mesh_color;
 
 			return true;
 		}
@@ -787,7 +864,7 @@ void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigne
 	b3ConvexUtility* utilPtr = new b3ConvexUtility();
 	b3Vector4 scaling = b3MakeVector4(1, 1, 1, 1);
 
-	if (scale > 0.0f && scale <= 1.0f)
+	if (scale > 0.0f)
 		scaling = b3MakeVector4(scale, scale, scale, scale);
 
 	{
@@ -814,9 +891,6 @@ void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigne
 		colIndex = m_data->m_np->registerConvexHullShape(utilPtr);
 
 	float mass = 1;
-
-	/*for (int k = 0; k < 10; ++k)
-	{*/
 	DEBUG_OUTPUT(std::cout << "Creating dynamic objects: " << (arraySizeX * arraySizeY * arraySizeZ) << std::endl);
 	for (int i = 0; i < arraySizeX; i++)
 	{
@@ -851,33 +925,6 @@ void ConcaveScene::createDynamicObjects(const b3Vector3& objects_origin, unsigne
 			}
 		}
 	}
-	/*for (int i = 0; i < arraySizeX; i++)
-	{
-		for (int j = 0; j < arraySizeY; j++)
-		{
-			for (int k = 0; k < arraySizeZ; k++)
-			{
-				if (!useInstancedCollisionShapes)
-					colIndex = m_data->m_np->registerConvexHullShape(utilPtr);
-
-				float mass = 1;
-
-				b3Vector3 position = b3MakeVector3(objects_origin.x + (-(arraySizeX / 2) * CONCAVE_GAPX + i * CONCAVE_GAPX),
-												   objects_origin.y + 23 + j * CONCAVE_GAPY,
-												   objects_origin.z + (-(arraySizeZ / 2) * CONCAVE_GAPZ + k * CONCAVE_GAPZ));
-				b3Quaternion orn(0, 0, 0, 1);
-
-				b3Vector4 color = colors[curColor];
-				curColor++;
-				curColor &= 3;
-
-				int id = m_instancingRenderer->registerGraphicsInstance(shapeId, position, orn, color, scaling);
-				int pid = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orn, colIndex, index, false);
-
-				index++;
-			}
-		}
-	}*/
 }
 
 /*

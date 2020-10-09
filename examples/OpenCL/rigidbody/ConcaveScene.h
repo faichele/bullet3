@@ -21,6 +21,7 @@
 #include "btOpenCLDebugDrawer.h"
 
 #include <vector>
+#include <map>
 
 class CommonExampleInterface* GPUConcaveSceneCreateFunc(struct CommonExampleOptions& options);
 
@@ -83,6 +84,9 @@ public:
 	float m_mouseYpos;
 	bool m_mouseInitialized;
 
+	std::map<int, b3Vector4> m_staticMeshColorsPhysics;
+	std::map<int, b3Vector4> m_staticMeshColorsVisual;
+
 	virtual void stepSimulation(float deltaTime);
 
 	virtual void clientResetScene();
@@ -119,7 +123,7 @@ public:
 
 	virtual void createDynamicObjects(const b3Vector3& objects_origin, unsigned int arraySizeX = 100, unsigned int arraySizeY = 50, unsigned int arraySizeZ = 5, float objectDistanceX = 0.5, float objectDistanceY = 0.5, float objectDistanceZ = 0.5, bool useInstancedCollisionShapes = true, float scale = 1.0f);
 
-	virtual bool createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject = false, float mass = 0.0f, int collisionMask = 0);
+	virtual bool createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject = false, float mass = 0.0f, int collisionMask = 0, const b3Vector4& color = b3MakeVector4(0.3, 0.3, 0.8, 1.0));
 };
 
 /*class ConcaveSphereScene : public ConcaveScene

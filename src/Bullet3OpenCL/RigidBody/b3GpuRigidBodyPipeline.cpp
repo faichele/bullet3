@@ -41,6 +41,7 @@ subject to the following restrictions:
 bool useBullet2CpuSolver = true;
 
 //choice of contact solver
+// TODO: Move to a config struct for the rigid body pipeline
 bool gUseJacobi = true;  //false;
 bool gUseDbvt = false;
 bool gDumpContactStats = true;
@@ -49,7 +50,7 @@ bool gUseCalculateOverlappingPairsHost = false;
 bool gIntegrateOnCpu = false;
 bool gClearPairsOnGpu = true;
 
-bool gApplyPushPullBehavioursOnCpu = false;
+bool gApplyPushPullBehavioursOnCpu = true;
 
 #define TEST_OTHER_GPU_SOLVER 1
 #ifdef TEST_OTHER_GPU_SOLVER
@@ -514,12 +515,12 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 
 		m_data->m_clock.reset();
 
-		/*m_data->m_pushPullBehaviorApplicationCPU->findPushPullContacts(
+		m_data->m_pushPullBehaviorApplicationCPU->findPushPullContacts(
 			bodies,
 			numBodies,
 			deltaTime,
 			m_data->m_overlappingPairsCPU,
-			m_data->m_bodiesPushPullVelocitiesCPU);*/
+			m_data->m_bodiesPushPullVelocitiesCPU);
 
 		unsigned int timePPLogicCPU = m_data->m_clock.getTimeMicroseconds();
 
@@ -616,7 +617,7 @@ void b3GpuRigidBodyPipeline::stepSimulation(float deltaTime)
 			bool useGpu = true;
 			if (useGpu)
 			{
-				bool forceHost = false;
+				bool forceHost = true;
 				if (forceHost)
 				{
 					{
@@ -714,11 +715,11 @@ void b3GpuRigidBodyPipeline::integrate(float timeStep)
 	{
 		if (numBodies)
 		{
+			std::cout << "Applying push-pull behaviors on CPU: " << m_data->m_bodiesPushPullBehaviorsCPU.size() << std::endl;
 			if (m_data->m_bodiesPushPullBehaviorsCPU.size() > 0)
 			{
-				/*if (gApplyPushPullBehavioursOnCpu)
+				if (gApplyPushPullBehavioursOnCpu)
 				{
-					DEBUG_OUTPUT(std::cout << "Applying push-pull behaviors on CPU." << std::endl);
 
 					b3GpuNarrowPhaseInternalData* npData = m_data->m_narrowphase->getInternalData();
 					b3RigidBodyData_t* bodies = &npData->m_bodyBufferCPU->at(0);
@@ -731,9 +732,9 @@ void b3GpuRigidBodyPipeline::integrate(float timeStep)
 						m_data->m_bodiesPushPullBehaviorsCPU,
 						m_data->m_bodiesPushPullVelocitiesCPU);
 
-					npData->m_bodyBufferGPU->copyFromHost(*npData->m_bodyBufferCPU);
+					// npData->m_bodyBufferGPU->copyFromHost(*npData->m_bodyBufferCPU);
 				}
-				else
+				/*else
 				{
 					DEBUG_OUTPUT(std::cout << "Applying push-pull behaviors on GPU." << std::endl);
 
