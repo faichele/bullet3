@@ -524,23 +524,43 @@ void ConcaveScene::setupScene()
 	tmp.setEulerZYX(0, 0, 0);
 	b3Quaternion orientation_plane;
 	tmp.getRotation(orientation_plane);
-	b3Vector3 position_plane = b3MakeVector3(0, -5, 0);
-	b3Vector4 scaling_plane = b3MakeVector4(750, 5, 750, 1);
-	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane);
+	b3Vector3 position_plane = b3MakeVector3(0, -10, 0);
+	b3Vector4 scaling_plane = b3MakeVector4(250, 2, 250, 1);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.9, 0.1, 0.1, 1.0));
 
 	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
 
-	int graphicsId_walls = -1, physicsId_walls = -1;
+	position_plane = b3MakeVector3(0, -5, 0);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.8, 0.1, 0.5, 1.0));
+
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
+
+	/*position_plane = b3MakeVector3(0, 0, 0);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.5, 0.8, 0.1, 1.0));
+
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;*/
+
+	position_plane = b3MakeVector3(0, 5, 0);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.5, 0.5, 0.1, 1.0));
+
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
+
+	position_plane = b3MakeVector3(0, 10, 0);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.8, 0.5, 0.5, 1.0));
+
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
+
+	/*int graphicsId_walls = -1, physicsId_walls = -1;
 	b3Vector3 position_walls = b3MakeVector3(0, 0, 0);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
 	b3Vector4 scaling_walls = b3MakeVector4(6.0, 50.0, 6.0, 1);
 	createConcaveMesh(graphicsId_walls, physicsId_walls, fileName_walls, position_walls, orientation_plane, scaling_walls);
 
-	std::cout << "Registered walls with graphicsId_walls = " << graphicsId_walls << " and physicsId_walls = " << physicsId_walls << std::endl;
+	std::cout << "Registered walls with graphicsId_walls = " << graphicsId_walls << " and physicsId_walls = " << physicsId_walls << std::endl;*/
 
 	// Test conveyor 1: Apply push-pull velocity to center of mass
-	int graphicsId_conveyor_1 = -1, physicsId_conveyor_1 = -1;
+	/*int graphicsId_conveyor_1 = -1, physicsId_conveyor_1 = -1;
 	b3Vector3 position_test_conveyor_1 = b3MakeVector3(0, 1, 0);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
@@ -549,7 +569,7 @@ void ConcaveScene::setupScene()
 	createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName_cube_2, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(0.9, 0.1, 0.1, 1.0));
 	//createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(1.0, 0.1, 0.1, 1.0));
 
-	std::cout << "Registered conveyor_1 with graphicsId_conveyor_1 = " << graphicsId_conveyor_1 << " and physicsId_conveyor_1 = " << physicsId_conveyor_1 << std::endl;
+	std::cout << "Registered conveyor_1 with graphicsId_conveyor_1 = " << graphicsId_conveyor_1 << " and physicsId_conveyor_1 = " << physicsId_conveyor_1 << std::endl;*/
 
 	// Test conveyor 2: Apply push-pull velocity per contact point
 	/*int graphicsId_conveyor_2 = -1, physicsId_conveyor_2 = -1;
@@ -594,11 +614,11 @@ void ConcaveScene::setupScene()
 		m_ghostObjectColIndices.push_back(physicsId);
 	}*/
 
-	b3Vector3 objects_origin = b3MakeVector3(0, 50, -10);
+	b3Vector3 objects_origin = b3MakeVector3(0, 75, -10);
 	float cube_scale = 5.0f;
-	createDynamicObjects(objects_origin, 1, 1, 1, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
+	createDynamicObjects(objects_origin, 3, 1, 1, cube_scale * 10.0f, cube_scale * 10.0f, cube_scale * 10.0f, true, cube_scale);
 
-	DEBUG_OUTPUT(std::cout << "Created dynamic objects." << std::endl);
+	std::cout << "Created dynamic objects." << std::endl;
 #endif
 
 #ifdef CONCAVE_SCENE_CONVEYOR_TEST_SMALL
@@ -673,9 +693,8 @@ void ConcaveScene::setupScene()
 
 	m_data->m_rigidBodyPipeline->writeAllInstancesToGpu();
 
-	char msg[1024];
 	int numInstances = m_data->m_rigidBodyPipeline->getNumBodies();
-	sprintf(msg, "Num objects = %d", numInstances);
+	std::cout << "Num objects = " << numInstances << std::endl;
 }
 
 bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char* fileName, const b3Vector3& position, const b3Quaternion& orientation, const b3Vector3& scaling, bool ghostObject, float mass, int collisionMask, const b3Vector4& color)
@@ -738,25 +757,27 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 		std::cout << "======================================================================" << std::endl;
 		for (int i = 0; i < shape->m_numvertices; i++)
 		{
+			// Store untransformed vertices for visualization
 			b3Vector3 vtx_untransformed = b3MakeVector3(shape->m_vertices->at(i).xyzw[0],
 														shape->m_vertices->at(i).xyzw[1],
 														shape->m_vertices->at(i).xyzw[2]);
-			untransformed_verts.push_back(vtx_untransformed * scaling);
+			// untransformed_verts.push_back(vtx_untransformed * scaling);
+			untransformed_verts.push_back(vtx_untransformed);
 
+			// Transform individual vertices for collision shapes
 			b3Vector3 vtx = b3MakeVector3(shape->m_vertices->at(i).xyzw[0],
 										  shape->m_vertices->at(i).xyzw[1],
 										  shape->m_vertices->at(i).xyzw[2]);
 
-			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before scaling    : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
-
-			// Scale individual vertices
-			vtx = vtx * scaling;
 
 			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before rotation   : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
 			// Rotate individual vertices
 			vtx = vtx.rotate(quat_axis, quat_angle);
-
 			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before translation: (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
+
+			// Scale individual vertices
+			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before scaling    : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
+			vtx = vtx * scaling;
 
 			// Setting position of the mesh later instead of shifting the individual vertices?
 			for (int j = 0; j < 3; j++)
@@ -783,6 +804,7 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 		int colIndex = -1;
 		// registerConcaveMesh receives scaling (1,1,1) because the actual scaling has already been applied to the mesh vertices above!
 		colIndex = m_data->m_np->registerConcaveMesh(&verts, shape->m_indices, b3MakeVector3(1.0, 1.0, 1.0));
+		// colIndex = m_data->m_np->registerConcaveMesh(&untransformed_verts, shape->m_indices, scaling);
 
 		{
 			int shapeId_shape = m_guiHelper->getRenderInterface()->registerShape(&shape->m_vertices->at(0).xyzw[0], shape->m_numvertices, &shape->m_indices->at(0), shape->m_numIndices);
@@ -797,19 +819,28 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 				b3Quaternion graphic_obj_rot = orientation;  // (0, 0, 0, 1);
 				b3Vector3 graphic_obj_scaling = scaling;     // b3MakeVector3(1, 1, 1);*/
 
-				b3Vector3 graphic_obj_pos = b3MakeVector3(0, 0, 0);
+				b3Vector3 graphic_obj_pos = position;
+				// b3Vector3 graphic_obj_pos = b3MakeVector3(0, 0, 0);
 				b3Quaternion graphic_obj_rot(0, 0, 0, 1);
 				b3Vector3 graphic_obj_scaling = b3MakeVector3(1, 1, 1);
+				//b3Vector3 graphic_obj_scaling = scaling;
 
 				int graphics_id = m_instancingRenderer->registerGraphicsInstance(shapeId_shape, graphic_obj_pos, graphic_obj_rot, mesh_color, graphic_obj_scaling);
 				graphicsId = graphics_id;
 
 				int physics_id = -1;
 
+				// b3Vector3 physics_obj_pos = position;
+				b3Vector3 physics_obj_pos = b3MakeVector3(0, 0, 0);
+				// b3Quaternion physics_obj_rot = orientation;
+				b3Quaternion physics_obj_rot(0, 0, 0, 1);
+				// b3Vector3 physics_obj_scaling = b3MakeVector3(1, 1, 1);
+				// b3Vector3 physics_obj_scaling = scaling;
+
 				if (ghostObject)
-					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orientation, colIndex, index, false, b3CollisionFlags::CF_GHOST_OBJECT, collisionMask);
+					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, physics_obj_pos, physics_obj_rot, colIndex, index, false, b3CollisionFlags::CF_GHOST_OBJECT, collisionMask);
 				else
-					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, position, orientation, colIndex, index, false, b3CollisionFlags::CF_STATIC_OBJECT, 0);
+					physics_id = m_data->m_rigidBodyPipeline->registerPhysicsInstance(mass, physics_obj_pos, physics_obj_rot, colIndex, index, false, b3CollisionFlags::CF_STATIC_OBJECT, 0);
 
 				physicsId = physics_id;
 
