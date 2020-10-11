@@ -525,22 +525,24 @@ void ConcaveScene::setupScene()
 	b3Quaternion orientation_plane;
 	tmp.getRotation(orientation_plane);
 	b3Vector3 position_plane = b3MakeVector3(0, -10, 0);
-	b3Vector4 scaling_plane = b3MakeVector4(250, 2, 250, 1);
+	b3Vector4 scaling_plane = b3MakeVector4(1000, 2, 1000, 1);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.9, 0.1, 0.1, 1.0));
 
 	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
 
-	position_plane = b3MakeVector3(0, -5, 0);
+	/*position_plane = b3MakeVector3(0, -5, 0);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.8, 0.1, 0.5, 1.0));
-
-	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
-
-	/*position_plane = b3MakeVector3(0, 0, 0);
-	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.5, 0.8, 0.1, 1.0));
 
 	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;*/
 
-	position_plane = b3MakeVector3(0, 5, 0);
+	position_plane = b3MakeVector3(-150, 50, 0);
+	tmp.setEulerZYX(0, 0, -1.57);
+	tmp.getRotation(orientation_plane);
+	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.5, 0.8, 0.1, 1.0));
+
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
+
+	/*position_plane = b3MakeVector3(0, 5, 0);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.5, 0.5, 0.1, 1.0));
 
 	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
@@ -548,7 +550,7 @@ void ConcaveScene::setupScene()
 	position_plane = b3MakeVector3(0, 10, 0);
 	createConcaveMesh(graphicsId, physicsId, fileName, position_plane, orientation_plane, scaling_plane, false, 0.0f, 0, b3MakeVector4(0.8, 0.5, 0.5, 1.0));
 
-	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;
+	std::cout << "Registered ground plane with graphicsId = " << graphicsId << " and physicsId = " << physicsId << std::endl;*/
 
 	/*int graphicsId_walls = -1, physicsId_walls = -1;
 	b3Vector3 position_walls = b3MakeVector3(0, 0, 0);
@@ -560,36 +562,36 @@ void ConcaveScene::setupScene()
 	std::cout << "Registered walls with graphicsId_walls = " << graphicsId_walls << " and physicsId_walls = " << physicsId_walls << std::endl;*/
 
 	// Test conveyor 1: Apply push-pull velocity to center of mass
-	/*int graphicsId_conveyor_1 = -1, physicsId_conveyor_1 = -1;
-	b3Vector3 position_test_conveyor_1 = b3MakeVector3(0, 1, 0);
+	int graphicsId_conveyor_1 = -1, physicsId_conveyor_1 = -1;
+	b3Vector3 position_test_conveyor_1 = b3MakeVector3(0, 20, -105);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
-	b3Vector4 scaling_test_conveyor_1 = b3MakeVector4(250.0, 5.0, 75.0, 1);
+	b3Vector4 scaling_test_conveyor_1 = b3MakeVector4(100.0, 5.0, 50.0, 1);
 	
-	createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName_cube_2, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(0.9, 0.1, 0.1, 1.0));
+	createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(0.9, 0.1, 0.1, 1.0));
 	//createConcaveMesh(graphicsId_conveyor_1, physicsId_conveyor_1, fileName, position_test_conveyor_1, orientation_plane, scaling_test_conveyor_1, false, 0.0f, 0, b3MakeVector4(1.0, 0.1, 0.1, 1.0));
 
-	std::cout << "Registered conveyor_1 with graphicsId_conveyor_1 = " << graphicsId_conveyor_1 << " and physicsId_conveyor_1 = " << physicsId_conveyor_1 << std::endl;*/
+	std::cout << "Registered conveyor_1 with graphicsId_conveyor_1 = " << graphicsId_conveyor_1 << " and physicsId_conveyor_1 = " << physicsId_conveyor_1 << std::endl;
 
 	// Test conveyor 2: Apply push-pull velocity per contact point
-	/*int graphicsId_conveyor_2 = -1, physicsId_conveyor_2 = -1;
-	b3Vector3 position_test_conveyor_2 = b3MakeVector3(0, 10, 100);
+	int graphicsId_conveyor_2 = -1, physicsId_conveyor_2 = -1;
+	b3Vector3 position_test_conveyor_2 = b3MakeVector3(0, 20, -45);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
-	b3Vector4 scaling_test_conveyor_2 = b3MakeVector4(250.0, 5.0, 75.0, 1);
+	b3Vector4 scaling_test_conveyor_2 = b3MakeVector4(100.0, 5.0, 50.0, 1);
 	createConcaveMesh(graphicsId_conveyor_2, physicsId_conveyor_2, fileName, position_test_conveyor_2, orientation_plane, scaling_test_conveyor_2, false, 0.0f, 0, b3MakeVector4(0.1, 1.0, 0.1, 1.0));
 
-	std::cout << "Registered conveyor_2 with graphicsId_conveyor_2 = " << graphicsId_conveyor_2 << " and physicsId_conveyor_2 = " << physicsId_conveyor_2 << std::endl;*/
+	std::cout << "Registered conveyor_2 with graphicsId_conveyor_2 = " << graphicsId_conveyor_2 << " and physicsId_conveyor_2 = " << physicsId_conveyor_2 << std::endl;
 
 	// Test conveyor 3: Apply push-pull velocity per contact point, 2
-	/*int graphicsId_conveyor_3 = -1, physicsId_conveyor_3 = -1;
-	b3Vector3 position_test_conveyor_3 = b3MakeVector3(0, 10, 200);
+	int graphicsId_conveyor_3 = -1, physicsId_conveyor_3 = -1;
+	b3Vector3 position_test_conveyor_3 = b3MakeVector3(0, 20, 20);
 	tmp.setEulerZYX(0, 0, 0);
 	tmp.getRotation(orientation_plane);
-	b3Vector4 scaling_test_conveyor_3 = b3MakeVector4(250.0, 5.0, 75.0, 1);
+	b3Vector4 scaling_test_conveyor_3 = b3MakeVector4(100.0, 5.0, 50.0, 1);
 	createConcaveMesh(graphicsId_conveyor_3, physicsId_conveyor_3, fileName, position_test_conveyor_3, orientation_plane, scaling_test_conveyor_3, false, 0.0f, 0, b3MakeVector4(1.0, 1.0, 0.1, 1.0));
 
-	std::cout << "Registered conveyor_3 with graphicsId_conveyor_3 = " << graphicsId_conveyor_3 << " and physicsId_conveyor_3 = " << physicsId_conveyor_3 << std::endl;*/
+	std::cout << "Registered conveyor_3 with graphicsId_conveyor_3 = " << graphicsId_conveyor_3 << " and physicsId_conveyor_3 = " << physicsId_conveyor_3 << std::endl;
 	
 	/*b3Vector3 trVel1 = b3MakeVector3(0, 0, 0);
 	b3Vector3 rotVel1 = b3MakeVector3(0, 8.0, 0);
@@ -769,10 +771,6 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 										  shape->m_vertices->at(i).xyzw[1],
 										  shape->m_vertices->at(i).xyzw[2]);
 
-
-			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before rotation   : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
-			// Rotate individual vertices
-			vtx = vtx.rotate(quat_axis, quat_angle);
 			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before translation: (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
 
 			// Scale individual vertices
@@ -785,6 +783,10 @@ bool ConcaveScene::createConcaveMesh(int& graphicsId, int& physicsId, const char
 				//shape->m_vertices->at(i).xyzw[j] += position[j];
 				vtx[j] += position[j];
 			}
+
+			DEBUG_OUTPUT(std::cout << " Vertex " << i << " before rotation   : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl);
+			// Rotate individual vertices
+			vtx = vtx.rotate(quat_axis, quat_angle);
 
 			std::cout << " Vertex " << i << " after transforming : (" << vtx.x << "," << vtx.y << "," << vtx.z << ")" << std::endl;
 
